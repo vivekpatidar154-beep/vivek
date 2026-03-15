@@ -3,253 +3,329 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Molecule Studio — Chemistry Visualizer</title>
-  <meta name="description" content="Free molecular visualizer with 2D/3D structures, chemical properties, and element analysis. Powered by PubChem." />
+  <title>Molecule Studio v3.1.1 — Chemistry Visualizer</title>
+  <meta name="description" content="Free molecular visualizer with 2D/3D structures, chemical properties, element analysis, and safety data. Powered by PubChem (NIH)." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='24' font-size='24'>⬡</text></svg>" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
     :root {
-      --bg: #08080e; --bg2: #0e0e16; --bg-panel: #111119;
-      --bg-card: rgba(255,255,255,0.025); --bg-glass: rgba(14,14,22,0.88);
-      --bg-input: rgba(255,255,255,0.04);
-      --border: rgba(255,255,255,0.055); --border-h: rgba(255,255,255,0.12);
-      --text: #e6e6ee; --text2: #a0a0b8; --text3: #6a6a80; --text4: #3c3c50;
-      --accent: #818cf8; --accent2: #a78bfa; --accent3: #c084fc;
-      --glow: rgba(129,140,248,0.12);
-      --green: #34d399; --red: #f87171; --blue: #38bdf8;
-      --f: 'Inter', -apple-system, sans-serif; --m: 'JetBrains Mono', monospace;
+      --bg: #07070d; --bg2: #0d0d15; --bg3: #111119;
+      --card: rgba(255,255,255,0.022); --glass: rgba(12,12,20,0.88);
+      --inp: rgba(255,255,255,0.035);
+      --brd: rgba(255,255,255,0.05); --brd2: rgba(255,255,255,0.1);
+      --tx: #e8e8f0; --tx2: #a0a0b8; --tx3: #6a6a80; --tx4: #3a3a4e;
+      --ac: #818cf8; --ac2: #a78bfa; --ac3: #c084fc;
+      --glow: rgba(129,140,248,0.1);
+      --grn: #34d399; --red: #f87171; --blu: #38bdf8; --orn: #fb923c; --ylw: #fbbf24;
+      --f: 'Inter',-apple-system,sans-serif; --m: 'JetBrains Mono',monospace;
       --r: 12px; --rs: 8px; --rx: 5px;
     }
     html, body, #root {
       width: 100%; height: 100%; font-family: var(--f);
-      background: var(--bg); color: var(--text);
+      background: var(--bg); color: var(--tx);
       overflow: hidden; -webkit-font-smoothing: antialiased;
+      -webkit-text-size-adjust: 100%;
     }
-    .app { width: 100vw; height: 100vh; display: flex; flex-direction: column; }
+    .app { width: 100vw; height: 100vh; height: 100dvh; display: flex; flex-direction: column; }
 
-    /* ── HEADER ──────────────────────── */
+    /* ── HEADER ─────────────────────── */
     .hdr {
-      height: 48px; min-height: 48px; display: flex;
+      height: 46px; min-height: 46px; display: flex;
       align-items: center; justify-content: space-between;
-      padding: 0 16px; background: var(--bg2);
-      border-bottom: 1px solid var(--border); z-index: 20;
+      padding: 0 14px; background: var(--bg2);
+      border-bottom: 1px solid var(--brd); z-index: 20;
     }
-    .hdr-l { display: flex; align-items: center; gap: 12px; }
-    .logo { display: flex; align-items: center; gap: 8px; user-select: none; }
+    .hdr-l { display: flex; align-items: center; gap: 10px; }
+    .logo { display: flex; align-items: center; gap: 7px; user-select: none; }
     .logo-i {
-      width: 26px; height: 26px; border-radius: 7px;
-      background: linear-gradient(135deg, var(--accent), var(--accent3));
+      width: 24px; height: 24px; border-radius: 6px;
+      background: linear-gradient(135deg, var(--ac), var(--ac3));
       display: flex; align-items: center; justify-content: center;
-      font-size: 12px; box-shadow: 0 1px 8px var(--glow);
+      font-size: 11px; box-shadow: 0 1px 6px var(--glow);
     }
-    .logo-n { font-weight: 600; font-size: 13px; letter-spacing: -0.3px; }
+    .logo-n { font-weight: 600; font-size: 13px; letter-spacing: -0.2px; }
     .logo-v {
-      font-size: 9px; font-family: var(--m); color: var(--text3);
-      background: var(--bg-card); padding: 1px 5px; border-radius: 3px;
-      border: 1px solid var(--border);
+      font-size: 8px; font-family: var(--m); color: var(--tx3);
+      background: var(--card); padding: 1px 5px; border-radius: 3px;
+      border: 1px solid var(--brd);
     }
-    .hdr-sep { width: 1px; height: 18px; background: var(--border); }
-
-    /* Search */
+    .sep { width: 1px; height: 16px; background: var(--brd); }
     .sr {
       display: flex; align-items: center;
-      background: var(--bg-input); border: 1px solid var(--border);
-      border-radius: var(--rs); padding: 0 3px 0 10px;
+      background: var(--inp); border: 1px solid var(--brd);
+      border-radius: var(--rs); padding: 0 3px 0 8px;
       transition: border-color 0.2s, box-shadow 0.2s;
-      width: 360px; max-width: 38vw;
+      width: 340px; max-width: 45vw; min-width: 0; flex-shrink: 1;
     }
-    .sr:focus-within { border-color: rgba(129,140,248,0.35); box-shadow: 0 0 0 3px var(--glow); }
-    .sr-ic { color: var(--text4); font-size: 13px; margin-right: 5px; }
+    .sr:focus-within { border-color: rgba(129,140,248,0.3); box-shadow: 0 0 0 2px var(--glow); }
+    .sr .si { color: var(--tx4); font-size: 12px; margin-right: 4px; }
     .sr input {
-      flex: 1; background: transparent; border: none; outline: none;
-      color: var(--text); font-size: 12.5px; padding: 6px 4px; font-family: var(--f);
+      flex: 1; background: 0; border: 0; outline: 0;
+      color: var(--tx); font-size: 12px; padding: 5px 3px; font-family: var(--f);
     }
-    .sr input::placeholder { color: var(--text4); }
-    .sr-btn {
-      background: linear-gradient(135deg, var(--accent), #6366f1);
-      border: none; color: #fff; font-size: 11px; font-weight: 500;
-      padding: 5px 12px; border-radius: var(--rx); cursor: pointer;
+    .sr input::placeholder { color: var(--tx4); }
+    .sr-b {
+      background: linear-gradient(135deg, var(--ac), #6366f1);
+      border: 0; color: #fff; font-size: 10.5px; font-weight: 500;
+      padding: 4px 11px; border-radius: var(--rx); cursor: pointer;
       font-family: var(--f); transition: opacity 0.2s;
     }
-    .sr-btn:hover { opacity: 0.9; }
-    .sr-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-
+    .sr-b:hover { opacity: 0.9; }
+    .sr-b:disabled { opacity: 0.35; cursor: not-allowed; }
+    .hdr-r { display: flex; align-items: center; gap: 6px; }
     .hdr-badge {
-      display: flex; align-items: center; gap: 5px;
-      font-size: 10px; color: var(--green); font-family: var(--m);
-      background: rgba(52,211,153,0.06); padding: 3px 8px;
-      border-radius: 4px; border: 1px solid rgba(52,211,153,0.1);
+      display: flex; align-items: center; gap: 4px;
+      font-size: 9px; color: var(--grn); font-family: var(--m);
+      background: rgba(52,211,153,0.05); padding: 2px 7px;
+      border-radius: 3px; border: 1px solid rgba(52,211,153,0.08);
     }
-    .hdr-badge .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--green); animation: pulse 2s ease infinite; }
-    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.3; } }
+    .hdr-badge .dot { width: 4px; height: 4px; border-radius: 50%; background: var(--grn); animation: pls 2s ease infinite; }
+    @keyframes pls { 0%,100%{opacity:1;}50%{opacity:0.3;} }
 
-    .main { flex: 1; display: flex; overflow: hidden; position: relative; }
+    .main { flex: 1; display: flex; overflow: hidden; overflow-y: auto; position: relative; -webkit-overflow-scrolling: touch; }
 
-    /* ── WELCOME ─────────────────────── */
-    .welcome {
-      flex: 1; display: flex; flex-direction: column;
-      align-items: center; justify-content: center; gap: 16px;
-      position: relative;
+    /* ── WELCOME PAGE ────────────────── */
+    .welcome { flex: 1; display: flex; flex-direction: column; overflow-y: auto; overflow-x: hidden; }
+    .hero {
+      position: relative; min-height: 380px;
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden;
     }
-    .w-bg {
+    .hero-img {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      object-fit: cover; opacity: 0.3;
+      mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
+      -webkit-mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
+    }
+    .hero-grad {
       position: absolute; inset: 0; pointer-events: none;
-      background-image:
-        radial-gradient(ellipse at 30% 40%, rgba(129,140,248,0.035) 0%, transparent 60%),
-        radial-gradient(ellipse at 70% 60%, rgba(192,132,252,0.025) 0%, transparent 60%);
+      background: radial-gradient(ellipse at 50% 80%, rgba(129,140,248,0.06) 0%, transparent 60%);
     }
-    .w-grid {
-      position: absolute; inset: 0; pointer-events: none;
-      background-image:
-        linear-gradient(rgba(255,255,255,0.01) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,0.01) 1px, transparent 1px);
-      background-size: 48px 48px;
+    .hero-content {
+      position: relative; z-index: 2; text-align: center;
+      display: flex; flex-direction: column; align-items: center; gap: 14px;
+      padding: 40px 20px;
     }
-    .welcome h1 { font-size: 34px; font-weight: 300; letter-spacing: -1.5px; z-index: 1; }
-    .welcome h1 span {
-      background: linear-gradient(135deg, var(--accent), var(--accent2), var(--accent3));
+    .hero h1 { font-size: 38px; font-weight: 300; letter-spacing: -1.5px; line-height: 1.15; }
+    .hero h1 span {
+      background: linear-gradient(135deg, var(--ac), var(--ac2), var(--ac3));
       -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-      font-weight: 600;
+      font-weight: 700;
     }
-    .welcome p { font-size: 13px; color: var(--text3); z-index: 1; text-align: center; max-width: 500px; line-height: 1.6; }
-    .welcome .free-tag {
-      font-size: 11px; color: var(--green); font-family: var(--m);
-      background: rgba(52,211,153,0.06); padding: 4px 12px;
-      border-radius: 4px; border: 1px solid rgba(52,211,153,0.1); z-index: 1;
+    .hero p { font-size: 13px; color: var(--tx3); max-width: 480px; line-height: 1.6; }
+    .hero-tags { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+    .htag {
+      font-size: 9px; font-family: var(--m); color: var(--tx3);
+      background: var(--card); padding: 3px 8px; border-radius: 3px;
+      border: 1px solid var(--brd); display: flex; align-items: center; gap: 4px;
     }
-    .chips { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; max-width: 640px; z-index: 1; }
+    .htag .hd { width: 4px; height: 4px; border-radius: 50%; }
+
+    /* Quick picks section */
+    .qp-section {
+      padding: 24px 30px 30px; display: flex; flex-direction: column;
+      align-items: center; gap: 14px;
+    }
+    .qp-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--tx3); }
+    .chips { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; max-width: 680px; }
     .chip {
-      background: var(--bg-card); border: 1px solid var(--border);
-      border-radius: 18px; padding: 5px 13px; font-size: 11.5px;
-      color: var(--text3); cursor: pointer; transition: all 0.2s; font-family: var(--f);
+      background: var(--card); border: 1px solid var(--brd);
+      border-radius: 18px; padding: 6px 14px; font-size: 11px;
+      color: var(--tx3); cursor: pointer; transition: all 0.2s; font-family: var(--f);
     }
-    .chip:hover { color: var(--text); border-color: var(--border-h); background: rgba(255,255,255,0.04); transform: translateY(-1px); }
-    .chip .cf { font-family: var(--m); font-size: 9.5px; color: var(--accent); margin-left: 4px; opacity: 0.7; }
+    .chip:hover { color: var(--tx); border-color: var(--brd2); background: rgba(255,255,255,0.04); transform: translateY(-1px); }
+    .chip .cf { font-family: var(--m); font-size: 9px; color: var(--ac); margin-left: 4px; opacity: 0.7; }
+
+    /* Feature cards */
+    .features {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+      padding: 0 30px 30px; max-width: 780px; margin: 0 auto; width: 100%;
+    }
+    .feat {
+      background: var(--card); border: 1px solid var(--brd);
+      border-radius: var(--rs); padding: 14px 16px;
+      transition: border-color 0.2s;
+    }
+    .feat:hover { border-color: var(--brd2); }
+    .feat-ic { font-size: 18px; margin-bottom: 8px; }
+    .feat-t { font-size: 12px; font-weight: 600; margin-bottom: 4px; }
+    .feat-d { font-size: 10.5px; color: var(--tx3); line-height: 1.5; }
+
+    .footer {
+      padding: 14px 30px; border-top: 1px solid var(--brd);
+      text-align: center; font-size: 9px; color: var(--tx4);
+      font-family: var(--m); line-height: 1.6;
+    }
 
     /* ── RESULT VIEW ─────────────────── */
-    .result { flex: 1; display: flex; overflow: hidden; }
+    .result { flex: 1; display: flex; flex-direction: row; overflow: hidden; }
 
     /* Info panel */
     .info {
-      width: 340px; min-width: 340px; background: var(--bg2);
-      border-right: 1px solid var(--border);
-      overflow-y: auto; overflow-x: hidden;
-      scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.04) transparent;
+      width: 350px; min-width: 350px; max-width: 350px; background: var(--bg2);
+      border-right: 1px solid var(--brd);
+      overflow-y: auto; scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,0.03) transparent;
     }
     .info::-webkit-scrollbar { width: 3px; }
-    .info::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.05); border-radius: 2px; }
+    .info::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.04); border-radius: 2px; }
 
     .tabs {
-      display: flex; background: var(--bg2); border-bottom: 1px solid var(--border);
-      padding: 0 14px; position: sticky; top: 0; z-index: 2;
+      display: flex; background: var(--bg2); border-bottom: 1px solid var(--brd);
+      padding: 0 12px; position: sticky; top: 0; z-index: 2;
     }
     .tab {
-      padding: 8px 12px; font-size: 10.5px; font-weight: 500;
-      color: var(--text3); cursor: pointer; border: none; background: none;
+      padding: 7px 10px; font-size: 10px; font-weight: 500;
+      color: var(--tx3); cursor: pointer; border: none; background: none;
       border-bottom: 2px solid transparent; transition: all 0.15s; font-family: var(--f);
     }
-    .tab:hover { color: var(--text2); }
-    .tab.on { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab:hover { color: var(--tx2); }
+    .tab.on { color: var(--ac); border-bottom-color: var(--ac); }
 
-    .sec { padding: 14px 16px; border-bottom: 1px solid var(--border); }
+    .sec { padding: 12px 14px; border-bottom: 1px solid var(--brd); }
     .sec:last-child { border-bottom: none; }
-    .sec-h { display: flex; align-items: center; gap: 5px; margin-bottom: 10px; }
-    .sec-ic { font-size: 13px; }
-    .sec-t { font-size: 9.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.7px; color: var(--text3); }
+    .sh { display: flex; align-items: center; gap: 5px; margin-bottom: 8px; }
+    .si2 { font-size: 12px; }
+    .st { font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: var(--tx3); }
 
-    .mn { font-size: 22px; font-weight: 300; letter-spacing: -0.6px; text-transform: capitalize; margin-bottom: 3px; }
-    .mi { font-size: 10px; color: var(--text3); font-family: var(--m); margin-bottom: 8px; word-break: break-all; }
-    .mf { font-family: var(--m); font-size: 18px; font-weight: 500; color: var(--accent); letter-spacing: 0.3px; }
+    .mn { font-size: 20px; font-weight: 300; letter-spacing: -0.5px; text-transform: capitalize; margin-bottom: 2px; }
+    .mi { font-size: 9.5px; color: var(--tx3); font-family: var(--m); margin-bottom: 6px; word-break: break-all; line-height: 1.4; }
+    .mf { font-family: var(--m); font-size: 16px; font-weight: 500; color: var(--ac); }
     .mf sub { font-size: 0.7em; }
 
     .props { display: flex; flex-direction: column; }
-    .pr { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.02); }
+    .pr { display: flex; align-items: center; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.018); }
     .pr:last-child { border-bottom: none; }
-    .pk { font-size: 11.5px; color: var(--text3); }
-    .pv { font-size: 11.5px; font-family: var(--m); color: var(--text2); font-weight: 500; text-align: right; max-width: 55%; }
+    .pk { font-size: 10.5px; color: var(--tx3); }
+    .pv { font-size: 10.5px; font-family: var(--m); color: var(--tx2); font-weight: 500; text-align: right; max-width: 55%; }
 
-    .desc { font-size: 12px; line-height: 1.7; color: var(--text2); }
+    .desc { font-size: 11.5px; line-height: 1.7; color: var(--tx2); }
 
     /* 2D image */
-    .s2d { background: #fff; border-radius: var(--rs); padding: 6px; text-align: center; position: relative; }
+    .s2d { background: #fff; border-radius: var(--rs); padding: 5px; text-align: center; position: relative; }
     .s2d img { max-width: 100%; height: auto; display: block; }
-    .s2d-lbl { position: absolute; top: 5px; left: 7px; font-size: 8px; font-family: var(--m); color: #999; text-transform: uppercase; letter-spacing: 0.4px; }
-    .s2d-src { font-size: 8px; color: #aaa; margin-top: 3px; font-family: var(--m); }
-    .s2d-err { padding: 24px 14px; text-align: center; font-size: 11px; color: var(--text4); background: var(--bg-card); border-radius: var(--rs); }
-    .s2d-load { padding: 32px; text-align: center; font-size: 10px; color: var(--text4); font-family: var(--m); }
+    .s2d-l { position: absolute; top: 4px; left: 6px; font-size: 7.5px; font-family: var(--m); color: #999; text-transform: uppercase; letter-spacing: 0.4px; }
+    .s2d-s { font-size: 8px; color: #aaa; margin-top: 2px; font-family: var(--m); }
+    .s2d-e { padding: 20px 12px; text-align: center; font-size: 10px; color: var(--tx4); background: var(--card); border-radius: var(--rs); }
 
     /* Legend */
-    .lg { display: flex; flex-direction: column; gap: 3px; }
-    .lr { display: flex; align-items: center; gap: 7px; padding: 4px 5px; border-radius: var(--rx); transition: background 0.12s; }
-    .lr:hover { background: rgba(255,255,255,0.02); }
-    .ld { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; box-shadow: 0 0 5px rgba(0,0,0,0.3), inset 0 1px 1px rgba(255,255,255,0.2); }
-    .ls { font-family: var(--m); font-size: 11px; font-weight: 600; width: 18px; }
-    .le { font-size: 10.5px; color: var(--text3); flex: 1; }
-    .lc { font-family: var(--m); font-size: 9px; color: var(--text4); background: var(--bg-input); padding: 1px 4px; border-radius: 3px; }
+    .lg { display: flex; flex-direction: column; gap: 2px; }
+    .lr { display: flex; align-items: center; gap: 6px; padding: 3px 4px; border-radius: var(--rx); transition: background 0.1s; }
+    .lr:hover { background: rgba(255,255,255,0.015); }
+    .ld { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; box-shadow: 0 0 4px rgba(0,0,0,0.3), inset 0 1px 1px rgba(255,255,255,0.15); }
+    .ls { font-family: var(--m); font-size: 10.5px; font-weight: 600; width: 16px; }
+    .le { font-size: 10px; color: var(--tx3); flex: 1; }
+    .lc { font-family: var(--m); font-size: 8.5px; color: var(--tx4); background: var(--inp); padding: 1px 4px; border-radius: 2px; }
+
+    /* Synonyms */
+    .syn-list { display: flex; flex-wrap: wrap; gap: 4px; }
+    .syn-tag {
+      font-size: 9.5px; font-family: var(--m); color: var(--tx3);
+      background: var(--card); padding: 2px 6px; border-radius: 3px;
+      border: 1px solid var(--brd);
+    }
+
+    /* Safety */
+    .safety-grid { display: flex; flex-direction: column; gap: 6px; }
+    .safety-item { display: flex; align-items: flex-start; gap: 6px; font-size: 10.5px; color: var(--tx2); line-height: 1.5; }
+    .safety-icon { font-size: 12px; flex-shrink: 0; margin-top: 1px; }
 
     /* ── 3D VIEWER ────────────────────── */
     .viewer { flex: 1; position: relative; background: var(--bg); }
     .v-canvas { position: absolute; inset: 0; }
     .v-canvas canvas { width: 100% !important; height: 100% !important; }
-
     .v-badge {
-      position: absolute; top: 10px; left: 10px; z-index: 5;
-      background: var(--bg-glass); backdrop-filter: blur(10px);
-      border: 1px solid var(--border); border-radius: var(--rx);
-      padding: 3px 8px; font-size: 9px; color: var(--text3);
-      font-family: var(--m); display: flex; align-items: center; gap: 4px;
+      position: absolute; top: 8px; left: 8px; z-index: 5;
+      background: var(--glass); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+      border: 1px solid var(--brd); border-radius: var(--rx);
+      padding: 3px 7px; font-size: 8.5px; color: var(--tx3);
+      font-family: var(--m); display: flex; align-items: center; gap: 3px;
     }
-    .v-badge .vd { width: 4px; height: 4px; border-radius: 50%; background: var(--green); }
-
-    .v-stats {
-      position: absolute; bottom: 10px; left: 10px; z-index: 5;
-      display: flex; gap: 5px;
+    .v-badge .vd { width: 4px; height: 4px; border-radius: 50%; background: var(--grn); }
+    .v-stats { position: absolute; bottom: 8px; left: 8px; z-index: 5; display: flex; gap: 4px; }
+    .vc2 {
+      background: var(--glass); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+      border: 1px solid var(--brd); border-radius: var(--rx);
+      padding: 3px 6px; font-size: 8.5px; font-family: var(--m); color: var(--tx3);
     }
-    .v-chip {
-      background: var(--bg-glass); backdrop-filter: blur(10px);
-      border: 1px solid var(--border); border-radius: var(--rx);
-      padding: 3px 7px; font-size: 9px; font-family: var(--m); color: var(--text3);
-    }
-    .v-chip b { color: var(--text2); font-weight: 500; }
-
-    .v-ctrl {
-      position: absolute; bottom: 10px; right: 10px; z-index: 5;
-      display: flex; gap: 5px;
-    }
-    .vc { display: flex; align-items: center; gap: 3px; font-size: 8.5px; color: var(--text4); font-family: var(--m); }
-    .vk { background: var(--bg-card); border: 1px solid var(--border); border-radius: 3px; padding: 1px 4px; }
-
+    .vc2 b { color: var(--tx2); font-weight: 500; }
+    .v-ctrl { position: absolute; bottom: 8px; right: 8px; z-index: 5; display: flex; gap: 4px; }
+    .vci { display: flex; align-items: center; gap: 2px; font-size: 8px; color: var(--tx4); font-family: var(--m); }
+    .vk { background: var(--card); border: 1px solid var(--brd); border-radius: 2px; padding: 1px 3px; }
     .v-empty {
       position: absolute; inset: 0; display: flex; align-items: center;
-      justify-content: center; flex-direction: column; gap: 8px;
-      font-size: 11px; color: var(--text4); font-family: var(--m);
+      justify-content: center; flex-direction: column; gap: 6px;
+      font-size: 10px; color: var(--tx4); font-family: var(--m);
     }
 
     /* ── LOADING ──────────────────────── */
     .load-o {
       position: absolute; inset: 0; z-index: 30;
       display: flex; align-items: center; justify-content: center;
-      flex-direction: column; gap: 14px;
-      background: rgba(8,8,14,0.88); backdrop-filter: blur(6px);
+      flex-direction: column; gap: 12px;
+      background: rgba(7,7,13,0.9); -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px);
     }
-    .spin {
-      width: 24px; height: 24px;
-      border: 2px solid var(--border); border-top-color: var(--accent);
-      border-radius: 50%; animation: sp 0.7s linear infinite;
-    }
+    .spin { width: 22px; height: 22px; border: 2px solid var(--brd); border-top-color: var(--ac); border-radius: 50%; animation: sp 0.7s linear infinite; }
     @keyframes sp { to { transform: rotate(360deg); } }
-    .load-t { font-size: 11px; color: var(--text3); font-family: var(--m); }
+    .load-t { font-size: 10.5px; color: var(--tx3); font-family: var(--m); }
 
     /* ── ERROR ────────────────────────── */
     .err {
-      position: fixed; bottom: 14px; left: 50%; transform: translateX(-50%);
-      z-index: 40; background: rgba(248,113,113,0.08);
-      border: 1px solid rgba(248,113,113,0.15); border-radius: var(--rs);
-      padding: 8px 16px; font-size: 11px; color: var(--red);
-      max-width: 450px; text-align: center; backdrop-filter: blur(10px);
+      position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%);
+      z-index: 40; background: rgba(248,113,113,0.07);
+      border: 1px solid rgba(248,113,113,0.12); border-radius: var(--rs);
+      padding: 7px 14px; font-size: 10.5px; color: var(--red);
+      max-width: 420px; text-align: center; -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
       animation: su 0.3s ease;
     }
-    @keyframes su { from { opacity:0; transform: translate(-50%,8px); } to { opacity:1; transform: translate(-50%,0); } }
+    @keyframes su { from{opacity:0;transform:translate(-50%,6px);}to{opacity:1;transform:translate(-50%,0);} }
+
+    /* ── MOBILE RESPONSIVE ──────────── */
+    @media (max-width: 900px) {
+      .hdr { padding: 0 8px; gap: 6px; }
+      .logo-n { font-size: 11px; }
+      .logo-v { display: none; }
+      .sep { display: none; }
+      .sr { width: auto; flex: 1; max-width: none; min-width: 0; }
+      .hdr-badge { font-size: 8px; padding: 2px 5px; }
+      .hero { min-height: 280px; }
+      .hero h1 { font-size: 28px; }
+      .hero p { font-size: 12px; }
+      .features { grid-template-columns: repeat(2, 1fr); padding: 0 16px 20px; }
+      .qp-section { padding: 16px; }
+      .result { flex-direction: column; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+      .info { width: 100%; min-width: 0; max-width: none; border-right: none; border-bottom: 1px solid var(--brd); max-height: 55vh; }
+      .viewer { min-height: 300px; flex: none; height: 45vh; }
+      .v-ctrl { display: none; }
+    }
+    @media (max-width: 560px) {
+      .hdr { height: 42px; min-height: 42px; }
+      .logo-i { width: 20px; height: 20px; font-size: 9px; }
+      .logo-n { font-size: 10px; }
+      .sr input { font-size: 11px; }
+      .sr-b { font-size: 9.5px; padding: 3px 8px; }
+      .hero { min-height: 220px; }
+      .hero h1 { font-size: 22px; }
+      .hero p { font-size: 11px; padding: 0 10px; }
+      .hero-tags { gap: 4px; }
+      .htag { font-size: 8px; padding: 2px 5px; }
+      .features { grid-template-columns: 1fr; padding: 0 12px 16px; }
+      .chips { gap: 5px; }
+      .chip { padding: 5px 10px; font-size: 10px; }
+      .chip .cf { font-size: 8px; }
+      .qp-section { padding: 12px; }
+      .footer { padding: 10px 12px; font-size: 8px; }
+      .tab { padding: 8px 7px; font-size: 9px; }
+      .sec { padding: 10px 12px; }
+      .mn { font-size: 18px; }
+      .mf { font-size: 14px; }
+      .pk, .pv { font-size: 10px; }
+      .info { max-height: 50vh; }
+      .viewer { height: 50vh; min-height: 250px; }
+      .err { max-width: 90vw; font-size: 10px; padding: 6px 10px; bottom: 8px; }
+    }
   </style>
 </head>
 <body>
@@ -263,7 +339,6 @@
   <script type="text/babel" data-type="module">
     const { useState, useEffect, useRef, useCallback, useMemo } = React;
 
-    // ── Element colors (CPK) ────────────
     const EL = {
       H:{c:'#FFFFFF',r:0.31,n:'Hydrogen'},He:{c:'#D9FFFF',r:0.28,n:'Helium'},
       Li:{c:'#CC80FF',r:1.28,n:'Lithium'},Be:{c:'#C2FF00',r:0.96,n:'Beryllium'},
@@ -277,330 +352,242 @@
       K:{c:'#8F40D4',r:2.03,n:'Potassium'},Ca:{c:'#3DFF00',r:1.76,n:'Calcium'},
       Fe:{c:'#E06633',r:1.32,n:'Iron'},Cu:{c:'#C88033',r:1.32,n:'Copper'},
       Zn:{c:'#7D80B0',r:1.22,n:'Zinc'},Br:{c:'#A62929',r:1.20,n:'Bromine'},
-      I:{c:'#940094',r:1.39,n:'Iodine'},
+      I:{c:'#940094',r:1.39,n:'Iodine'},Mn:{c:'#9C7AC7',r:1.39,n:'Manganese'},
+      Co:{c:'#F090A0',r:1.26,n:'Cobalt'},Se:{c:'#FFA100',r:1.20,n:'Selenium'},
     };
-    const getEl = s => { const k = s.charAt(0).toUpperCase()+s.slice(1).toLowerCase(); return EL[k]||{c:'#8a8a8a',r:0.8,n:k}; };
+    const getEl = s => { const k=s.charAt(0).toUpperCase()+s.slice(1).toLowerCase(); return EL[k]||{c:'#8a8a8a',r:0.8,n:k}; };
 
-    // ── PubChem API (100% free, no key) ──
-    const PUBCHEM = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug';
-
-    async function fetchMolecule(name) {
-      // 1. Get CID
-      const cidRes = await fetch(`${PUBCHEM}/compound/name/${encodeURIComponent(name)}/cids/JSON`);
-      if (!cidRes.ok) throw new Error(`Molecule "${name}" not found in PubChem`);
-      const cidData = await cidRes.json();
-      const cid = cidData.IdentifierList.CID[0];
-
-      // 2. Fetch properties
-      const propsRes = await fetch(`${PUBCHEM}/compound/cid/${cid}/property/MolecularFormula,MolecularWeight,IUPACName,ExactMass,HBondDonorCount,HBondAcceptorCount,RotatableBondCount,XLogP/JSON`);
-      const propsData = await propsRes.json();
-      const props = propsData.PropertyTable.Properties[0];
-
-      // 3. Fetch description
-      let description = '';
-      try {
-        const descRes = await fetch(`${PUBCHEM}/compound/cid/${cid}/description/JSON`);
-        const descData = await descRes.json();
-        const descs = descData.InformationList.Information;
-        const desc = descs.find(d => d.Description && d.Description.length > 30);
-        if (desc) description = desc.Description;
-      } catch(e) {}
-
-      // 4. Fetch 3D conformer (SDF)
-      let atoms = [], bonds = [];
-      try {
-        const sdfRes = await fetch(`${PUBCHEM}/compound/cid/${cid}/record/SDF/?record_type=3d&response_type=display`);
-        if (sdfRes.ok) {
-          const sdf = await sdfRes.text();
-          const parsed = parseSDF(sdf);
-          atoms = parsed.atoms;
-          bonds = parsed.bonds;
-        }
-      } catch(e) {}
-
-      // 5. If no 3D, try 2D and use those coords
-      if (atoms.length === 0) {
-        try {
-          const sdfRes = await fetch(`${PUBCHEM}/compound/cid/${cid}/record/SDF/?record_type=2d&response_type=display`);
-          if (sdfRes.ok) {
-            const sdf = await sdfRes.text();
-            const parsed = parseSDF(sdf);
-            atoms = parsed.atoms;
-            bonds = parsed.bonds;
-          }
-        } catch(e) {}
-      }
-
-      return {
-        cid,
-        name: name,
-        formula: props.MolecularFormula,
-        iupac: props.IUPACName,
-        molecular_weight: props.MolecularWeight,
-        exact_mass: props.ExactMass,
-        hbond_donor: props.HBondDonorCount,
-        hbond_acceptor: props.HBondAcceptorCount,
-        rotatable_bonds: props.RotatableBondCount,
-        xlogp: props.XLogP,
-        description,
-        atoms,
-        bonds,
-        image2d: `${PUBCHEM}/compound/cid/${cid}/PNG?image_size=300x300`,
-      };
-    }
+    const PUB = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug';
 
     // ── SDF Parser ──────────────────────
     function parseSDF(sdf) {
       const lines = sdf.split('\n');
       const atoms = [], bonds = [];
-      // Find counts line (V2000 format)
-      let countsLine = -1;
+      let cl = -1;
       for (let i = 0; i < Math.min(lines.length, 10); i++) {
-        if (lines[i].includes('V2000') || lines[i].includes('V3000')) {
-          countsLine = i; break;
-        }
+        if (lines[i].includes('V2000') || lines[i].includes('V3000')) { cl = i; break; }
       }
-      if (countsLine === -1) return { atoms, bonds };
-
-      const counts = lines[countsLine].trim().split(/\s+/);
-      const numAtoms = parseInt(counts[0]);
-      const numBonds = parseInt(counts[1]);
-
-      // Parse atoms
-      for (let i = 0; i < numAtoms; i++) {
-        const line = lines[countsLine + 1 + i];
-        if (!line) continue;
-        const parts = line.trim().split(/\s+/);
-        if (parts.length >= 4) {
-          atoms.push({
-            id: i,
-            x: parseFloat(parts[0]),
-            y: parseFloat(parts[1]),
-            z: parseFloat(parts[2]),
-            element: parts[3],
-          });
-        }
+      if (cl === -1) return { atoms, bonds };
+      const c = lines[cl].trim().split(/\s+/);
+      const na = parseInt(c[0]), nb = parseInt(c[1]);
+      for (let i = 0; i < na; i++) {
+        const l = lines[cl+1+i]; if (!l) continue;
+        const p = l.trim().split(/\s+/);
+        if (p.length >= 4) atoms.push({ id:i, x:parseFloat(p[0]), y:parseFloat(p[1]), z:parseFloat(p[2]), element:p[3] });
       }
-
-      // Parse bonds
-      for (let i = 0; i < numBonds; i++) {
-        const line = lines[countsLine + 1 + numAtoms + i];
-        if (!line) continue;
-        const parts = line.trim().split(/\s+/);
-        if (parts.length >= 3) {
-          bonds.push({
-            from: parseInt(parts[0]) - 1,
-            to: parseInt(parts[1]) - 1,
-            order: parseInt(parts[2]),
-          });
-        }
+      for (let i = 0; i < nb; i++) {
+        const l = lines[cl+1+na+i]; if (!l) continue;
+        const p = l.trim().split(/\s+/);
+        if (p.length >= 3) bonds.push({ from:parseInt(p[0])-1, to:parseInt(p[1])-1, order:parseInt(p[2]) });
       }
-
       return { atoms, bonds };
     }
 
-    // ── Formula component ───────────────
+    // ── PubChem API (free) ──────────────
+    async function fetchMolecule(name) {
+      // Get CID
+      const cr = await fetch(`${PUB}/compound/name/${encodeURIComponent(name)}/cids/JSON`);
+      if (!cr.ok) throw new Error(`"${name}" not found in PubChem database`);
+      const cd = await cr.json();
+      const cid = cd.IdentifierList.CID[0];
+
+      // Properties
+      const pr = await fetch(`${PUB}/compound/cid/${cid}/property/MolecularFormula,MolecularWeight,IUPACName,ExactMass,HBondDonorCount,HBondAcceptorCount,RotatableBondCount,XLogP,TPSA,Complexity,HeavyAtomCount,Charge,InChI,InChIKey,CanonicalSMILES,IsomericSMILES/JSON`);
+      const pd = await pr.json();
+      const p = pd.PropertyTable.Properties[0];
+
+      // Description
+      let description = '';
+      try {
+        const dr = await fetch(`${PUB}/compound/cid/${cid}/description/JSON`);
+        const dd = await dr.json();
+        const d = dd.InformationList.Information.find(x => x.Description && x.Description.length > 30);
+        if (d) description = d.Description;
+      } catch(e) {}
+
+      // Synonyms
+      let synonyms = [];
+      try {
+        const sr = await fetch(`${PUB}/compound/cid/${cid}/synonyms/JSON`);
+        const sd = await sr.json();
+        synonyms = (sd.InformationList.Information[0].Synonym || []).slice(0, 8);
+      } catch(e) {}
+
+      // Safety/GHS
+      let safety = [];
+      try {
+        const gr = await fetch(`https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/data/compound/${cid}/JSON?heading=GHS+Classification`);
+        const gd = await gr.json();
+        const sections = gd.Record.Section;
+        if (sections) {
+          const ghsSec = findSection(sections, 'GHS Classification');
+          if (ghsSec) {
+            const hazards = findSection(ghsSec.Section || [], 'GHS Hazard Statements');
+            if (hazards && hazards.Information) {
+              hazards.Information.forEach(info => {
+                if (info.Value && info.Value.StringWithMarkup) {
+                  info.Value.StringWithMarkup.forEach(s => {
+                    if (s.String && safety.length < 5) safety.push(s.String);
+                  });
+                }
+              });
+            }
+          }
+        }
+      } catch(e) {}
+
+      // 3D conformer
+      let atoms = [], bonds = [];
+      try {
+        const sr = await fetch(`${PUB}/compound/cid/${cid}/record/SDF/?record_type=3d&response_type=display`);
+        if (sr.ok) { const parsed = parseSDF(await sr.text()); atoms = parsed.atoms; bonds = parsed.bonds; }
+      } catch(e) {}
+      if (atoms.length === 0) {
+        try {
+          const sr = await fetch(`${PUB}/compound/cid/${cid}/record/SDF/?record_type=2d&response_type=display`);
+          if (sr.ok) { const parsed = parseSDF(await sr.text()); atoms = parsed.atoms; bonds = parsed.bonds; }
+        } catch(e) {}
+      }
+
+      return {
+        cid, name, formula: p.MolecularFormula, iupac: p.IUPACName,
+        mw: p.MolecularWeight, exact_mass: p.ExactMass,
+        hbd: p.HBondDonorCount, hba: p.HBondAcceptorCount,
+        rb: p.RotatableBondCount, xlogp: p.XLogP,
+        tpsa: p.TPSA, complexity: p.Complexity,
+        heavy_atoms: p.HeavyAtomCount, charge: p.Charge,
+        inchi: p.InChI, inchikey: p.InChIKey,
+        smiles: p.CanonicalSMILES, iso_smiles: p.IsomericSMILES,
+        description, synonyms, safety,
+        atoms, bonds,
+        img2d: `${PUB}/compound/cid/${cid}/PNG?image_size=300x300`,
+      };
+    }
+
+    function findSection(sections, heading) {
+      for (const s of sections) {
+        if (s.TOCHeading === heading) return s;
+        if (s.Section) { const r = findSection(s.Section, heading); if (r) return r; }
+      }
+      return null;
+    }
+
+    // ── Components ──────────────────────
     function Fm({ text, cls }) {
       if (!text) return null;
       const parts = text.split(/(\d+)/);
-      return (
-        <span className={cls}>
-          {parts.map((p, i) => /^\d+$/.test(p) ? <sub key={i}>{p}</sub> : <span key={i}>{p}</span>)}
-        </span>
-      );
+      return <span className={cls}>{parts.map((p,i)=> /^\d+$/.test(p)?<sub key={i}>{p}</sub>:<span key={i}>{p}</span>)}</span>;
     }
 
-    // ── Element Legend ──────────────────
     function Legend({ atoms }) {
       const els = useMemo(() => {
         if (!atoms?.length) return [];
         const c = {};
-        atoms.forEach(a => { const s = a.element.charAt(0).toUpperCase()+a.element.slice(1).toLowerCase(); c[s]=(c[s]||0)+1; });
-        return Object.entries(c).map(([s,n]) => ({s,n,...getEl(s)})).sort((a,b) => b.n-a.n);
+        atoms.forEach(a => { const s=a.element.charAt(0).toUpperCase()+a.element.slice(1).toLowerCase(); c[s]=(c[s]||0)+1; });
+        return Object.entries(c).map(([s,n])=>({s,n,...getEl(s)})).sort((a,b)=>b.n-a.n);
       }, [atoms]);
-      if (!els.length) return <div style={{fontSize:'11px',color:'var(--text4)'}}>No element data</div>;
-      return (
-        <div className="lg">
-          {els.map(({s,n,c,r,n:nm}) => (
-            <div className="lr" key={s}>
-              <div className="ld" style={{background:c}} />
-              <span className="ls">{s}</span>
-              <span className="le">{getEl(s).n}</span>
-              <span className="lc">×{n}</span>
-            </div>
-          ))}
-        </div>
-      );
+      if (!els.length) return <div style={{fontSize:'10px',color:'var(--tx4)'}}>No element data</div>;
+      return <div className="lg">{els.map(({s,n,c})=> <div className="lr" key={s}><div className="ld" style={{background:c}}/><span className="ls">{s}</span><span className="le">{getEl(s).n}</span><span className="lc">×{n}</span></div>)}</div>;
     }
 
-    // ── 2D Structure Image ──────────────
     function Img2D({ url, name }) {
-      const [ok, setOk] = useState(true);
-      const [ld, setLd] = useState(true);
-      useEffect(() => { setOk(true); setLd(true); }, [url]);
-      if (!ok) return <div className="s2d-err">2D structure not available</div>;
+      const [ok,setOk]=useState(true); const [ld,setLd]=useState(true);
+      useEffect(()=>{setOk(true);setLd(true);},[url]);
+      if (!ok) return <div className="s2d-e">2D structure not available</div>;
       return (
         <div className="s2d">
-          <span className="s2d-lbl">2D Structure</span>
-          {ld && <div className="s2d-load">Loading...</div>}
+          <span className="s2d-l">2D Structure</span>
+          {ld && <div style={{padding:'28px',textAlign:'center',fontSize:'9px',color:'#999',fontFamily:'var(--m)'}}>Loading...</div>}
           <img src={url} alt={`2D structure of ${name}`}
-            onLoad={() => setLd(false)} onError={() => { setOk(false); setLd(false); }}
+            onLoad={()=>setLd(false)} onError={()=>{setOk(false);setLd(false);}}
             style={{display:ld?'none':'block'}} />
-          {!ld && <div className="s2d-src">Source: PubChem · NIH / NLM</div>}
+          {!ld && <div className="s2d-s">Source: PubChem · NIH / NLM</div>}
         </div>
       );
     }
 
     // ── 3D Viewer ───────────────────────
     function View3D({ data }) {
-      const ref = useRef(null);
-      const rRef = useRef(null);
-      const cRef = useRef(null);
-      const fRef = useRef(null);
-
-      useEffect(() => {
-        if (!ref.current || !data?.atoms?.length) return;
-        if (rRef.current) {
-          cancelAnimationFrame(fRef.current);
-          rRef.current.dispose(); cRef.current?.dispose();
-          ref.current.innerHTML = '';
-        }
-        const el = ref.current;
-        const w = el.clientWidth, h = el.clientHeight;
-        if (!w || !h) return;
-
-        const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x08080e);
-        const cam = new THREE.PerspectiveCamera(50, w/h, 0.1, 1000);
-        const ren = new THREE.WebGLRenderer({antialias:true});
-        ren.setSize(w,h); ren.setPixelRatio(Math.min(window.devicePixelRatio,2));
-        ren.toneMapping = THREE.ACESFilmicToneMapping;
-        ren.toneMappingExposure = 1.3;
-        el.appendChild(ren.domElement); rRef.current = ren;
-
-        const ctrl = new THREE.OrbitControls(cam, ren.domElement);
-        ctrl.enableDamping = true; ctrl.dampingFactor = 0.06;
-        ctrl.rotateSpeed = 0.7; ctrl.zoomSpeed = 1.2;
-        ctrl.minDistance = 2; ctrl.maxDistance = 80;
-        cRef.current = ctrl;
-
-        scene.add(new THREE.AmbientLight(0xffffff, 0.5));
-        const d1 = new THREE.DirectionalLight(0xffffff,0.9); d1.position.set(5,8,5); scene.add(d1);
-        const d2 = new THREE.DirectionalLight(0x818cf8,0.35); d2.position.set(-5,-3,-5); scene.add(d2);
-        const d3 = new THREE.DirectionalLight(0xc084fc,0.25); d3.position.set(0,-5,5); scene.add(d3);
-        const d4 = new THREE.DirectionalLight(0xffffff,0.2); d4.position.set(0,10,0); scene.add(d4);
-
-        const { atoms, bonds } = data;
-        const g = new THREE.Group();
-        let cx=0,cy=0,cz=0;
-        atoms.forEach(a => { cx+=a.x; cy+=a.y; cz+=a.z; });
-        cx/=atoms.length; cy/=atoms.length; cz/=atoms.length;
-
-        atoms.forEach(a => {
-          const e = getEl(a.element);
-          const radius = Math.max(0.25, Math.min(e.r * 0.45, 0.6));
-          const geo = new THREE.SphereGeometry(radius, 48, 48);
-          const mat = new THREE.MeshPhysicalMaterial({
-            color: new THREE.Color(e.c), roughness: 0.18, metalness: 0.08,
-            clearcoat: 0.4, clearcoatRoughness: 0.25,
-          });
-          const m = new THREE.Mesh(geo, mat);
-          m.position.set(a.x-cx, a.y-cy, a.z-cz);
-          g.add(m);
+      const ref=useRef(null),rR=useRef(null),cR=useRef(null),fR=useRef(null);
+      useEffect(()=>{
+        if(!ref.current||!data?.atoms?.length) return;
+        if(rR.current){cancelAnimationFrame(fR.current);rR.current.dispose();cR.current?.dispose();ref.current.innerHTML='';}
+        const el=ref.current,w=el.clientWidth,h=el.clientHeight;
+        if(!w||!h) return;
+        const scene=new THREE.Scene(); scene.background=new THREE.Color(0x07070d);
+        const cam=new THREE.PerspectiveCamera(50,w/h,0.1,1000);
+        const ren=new THREE.WebGLRenderer({antialias:true});
+        ren.setSize(w,h);ren.setPixelRatio(Math.min(window.devicePixelRatio,2));
+        ren.toneMapping=THREE.ACESFilmicToneMapping;ren.toneMappingExposure=1.3;
+        el.appendChild(ren.domElement);rR.current=ren;
+        const ctrl=new THREE.OrbitControls(cam,ren.domElement);
+        ctrl.enableDamping=true;ctrl.dampingFactor=0.06;ctrl.rotateSpeed=0.7;ctrl.zoomSpeed=1.2;ctrl.minDistance=2;ctrl.maxDistance=80;
+        cR.current=ctrl;
+        scene.add(new THREE.AmbientLight(0xffffff,0.5));
+        [[[5,8,5],0xffffff,0.9],[[-5,-3,-5],0x818cf8,0.35],[[0,-5,5],0xc084fc,0.25],[[0,10,0],0xffffff,0.2]].forEach(([p,c,i])=>{
+          const d=new THREE.DirectionalLight(c,i);d.position.set(...p);scene.add(d);
         });
-
-        bonds.forEach(b => {
-          const a1=atoms[b.from], a2=atoms[b.to];
-          if(!a1||!a2) return;
-          const s = new THREE.Vector3(a1.x-cx,a1.y-cy,a1.z-cz);
-          const e = new THREE.Vector3(a2.x-cx,a2.y-cy,a2.z-cz);
-          const mid = new THREE.Vector3().addVectors(s,e).multiplyScalar(0.5);
-          const dir = new THREE.Vector3().subVectors(e,s);
-          const len = dir.length();
-          const bo = b.order||1;
-          const offsets = bo===1?[0]:bo===2?[-0.1,0.1]:[-0.14,0,0.14];
-          const dn = dir.clone().normalize();
-          let perp = new THREE.Vector3(0,1,0);
-          if(Math.abs(dn.dot(perp))>0.9) perp = new THREE.Vector3(1,0,0);
-          perp.cross(dn).normalize();
-          offsets.forEach(o => {
-            const br = bo===1?0.06:0.045;
-            const geo = new THREE.CylinderGeometry(br,br,len,12,1);
-            const mat = new THREE.MeshPhysicalMaterial({color:0x555566,roughness:0.35,metalness:0.15,clearcoat:0.2});
-            const m = new THREE.Mesh(geo,mat);
+        const{atoms,bonds}=data;const g=new THREE.Group();
+        let cx=0,cy=0,cz=0;atoms.forEach(a=>{cx+=a.x;cy+=a.y;cz+=a.z;});cx/=atoms.length;cy/=atoms.length;cz/=atoms.length;
+        atoms.forEach(a=>{
+          const e=getEl(a.element),r=Math.max(0.25,Math.min(e.r*0.45,0.6));
+          const m=new THREE.Mesh(new THREE.SphereGeometry(r,48,48),new THREE.MeshPhysicalMaterial({color:new THREE.Color(e.c),roughness:0.18,metalness:0.08,clearcoat:0.4,clearcoatRoughness:0.25}));
+          m.position.set(a.x-cx,a.y-cy,a.z-cz);g.add(m);
+        });
+        bonds.forEach(b=>{
+          const a1=atoms[b.from],a2=atoms[b.to];if(!a1||!a2) return;
+          const s=new THREE.Vector3(a1.x-cx,a1.y-cy,a1.z-cz),e=new THREE.Vector3(a2.x-cx,a2.y-cy,a2.z-cz);
+          const mid=new THREE.Vector3().addVectors(s,e).multiplyScalar(0.5);
+          const dir=new THREE.Vector3().subVectors(e,s),len=dir.length(),bo=b.order||1;
+          const offs=bo===1?[0]:bo===2?[-0.1,0.1]:[-0.14,0,0.14];
+          const dn=dir.clone().normalize();let perp=new THREE.Vector3(0,1,0);
+          if(Math.abs(dn.dot(perp))>0.9)perp=new THREE.Vector3(1,0,0);perp.cross(dn).normalize();
+          offs.forEach(o=>{
+            const br=bo===1?0.06:0.045;
+            const m=new THREE.Mesh(new THREE.CylinderGeometry(br,br,len,12,1),new THREE.MeshPhysicalMaterial({color:0x555566,roughness:0.35,metalness:0.15,clearcoat:0.2}));
             m.position.copy(mid).add(perp.clone().multiplyScalar(o));
-            m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),dn);
-            g.add(m);
+            m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),dn);g.add(m);
           });
         });
-
-        scene.add(g);
-        const box = new THREE.Box3().setFromObject(g);
-        const sz = box.getSize(new THREE.Vector3()).length();
-        const cen = box.getCenter(new THREE.Vector3());
-        ctrl.target.copy(cen);
-        cam.position.set(cen.x+sz*0.7, cen.y+sz*0.4, cen.z+sz*1.1);
-        cam.lookAt(cen); ctrl.update();
-
-        let autoR = true;
-        const stopR = () => { autoR = false; };
-        ren.domElement.addEventListener('pointerdown', stopR);
-
-        function anim() {
-          fRef.current = requestAnimationFrame(anim);
-          if (autoR) g.rotation.y += 0.003;
-          ctrl.update(); ren.render(scene, cam);
-        }
-        anim();
-
-        const onResize = () => {
-          const ww=el.clientWidth, hh=el.clientHeight;
-          if(!ww||!hh) return;
-          cam.aspect=ww/hh; cam.updateProjectionMatrix(); ren.setSize(ww,hh);
-        };
-        window.addEventListener('resize', onResize);
-        return () => {
-          cancelAnimationFrame(fRef.current);
-          window.removeEventListener('resize', onResize);
-          ren.domElement.removeEventListener('pointerdown', stopR);
-          ren.dispose(); ctrl.dispose();
-        };
-      }, [data]);
-
-      if (!data?.atoms?.length) {
-        return <div className="v-empty"><span>⬡</span>3D structure not available</div>;
-      }
+        scene.add(g);const box=new THREE.Box3().setFromObject(g);
+        const sz=box.getSize(new THREE.Vector3()).length(),cen=box.getCenter(new THREE.Vector3());
+        ctrl.target.copy(cen);cam.position.set(cen.x+sz*0.7,cen.y+sz*0.4,cen.z+sz*1.1);cam.lookAt(cen);ctrl.update();
+        let autoR=true;const stopR=()=>{autoR=false;};
+        ren.domElement.addEventListener('pointerdown',stopR);
+        function anim(){fR.current=requestAnimationFrame(anim);if(autoR)g.rotation.y+=0.003;ctrl.update();ren.render(scene,cam);}anim();
+        const onR=()=>{const ww=el.clientWidth,hh=el.clientHeight;if(!ww||!hh)return;cam.aspect=ww/hh;cam.updateProjectionMatrix();ren.setSize(ww,hh);};
+        window.addEventListener('resize',onR);
+        return()=>{cancelAnimationFrame(fR.current);window.removeEventListener('resize',onR);ren.domElement.removeEventListener('pointerdown',stopR);ren.dispose();ctrl.dispose();};
+      },[data]);
+      if(!data?.atoms?.length) return <div className="v-empty"><span style={{fontSize:'20px'}}>⬡</span>3D structure not available for this compound</div>;
       return <div ref={ref} className="v-canvas" />;
     }
 
     // ── App ─────────────────────────────
     function App() {
-      const [q, setQ] = useState('');
-      const [mol, setMol] = useState(null);
-      const [loading, setLoading] = useState(false);
-      const [error, setError] = useState(null);
-      const [tab, setTab] = useState('overview');
+      const [q,setQ]=useState('');
+      const [mol,setMol]=useState(null);
+      const [loading,setLoading]=useState(false);
+      const [error,setError]=useState(null);
+      const [tab,setTab]=useState('overview');
 
-      useEffect(() => { if(error){ const t=setTimeout(()=>setError(null),6000); return()=>clearTimeout(t); }}, [error]);
+      useEffect(()=>{if(error){const t=setTimeout(()=>setError(null),6000);return()=>clearTimeout(t);}},  [error]);
 
-      const search = useCallback(async (n) => {
-        const name = n || q.trim();
-        if(!name) return;
-        setLoading(true); setError(null);
-        try {
-          const data = await fetchMolecule(name);
-          setMol(data); setQ(name); setTab('overview');
-        } catch(err) { setError(err.message); }
-        finally { setLoading(false); }
-      }, [q]);
+      const search = useCallback(async(n)=>{
+        const name=n||q.trim(); if(!name) return;
+        setLoading(true);setError(null);
+        try{const data=await fetchMolecule(name);setMol(data);setQ(name);setTab('overview');}
+        catch(e){setError(e.message);}
+        finally{setLoading(false);}
+      },[q]);
 
-      const onSubmit = e => { e.preventDefault(); search(); };
+      const onSubmit=e=>{e.preventDefault();search();};
 
       const picks = [
         {n:'Water',f:'H₂O'},{n:'Caffeine',f:'C₈H₁₀N₄O₂'},{n:'Ethanol',f:'C₂H₅OH'},
         {n:'Aspirin',f:'C₉H₈O₄'},{n:'Methane',f:'CH₄'},{n:'Glucose',f:'C₆H₁₂O₆'},
         {n:'Benzene',f:'C₆H₆'},{n:'Dopamine',f:'C₈H₁₁NO₂'},{n:'Acetone',f:'C₃H₆O'},
-        {n:'Acetic Acid',f:'CH₃COOH'},
+        {n:'Acetic Acid',f:'CH₃COOH'},{n:'Vitamin C',f:'C₆H₈O₆'},{n:'Penicillin',f:'C₁₆H₁₈N₂O₄S'},
       ];
 
       return (
@@ -610,44 +597,89 @@
               <div className="logo">
                 <div className="logo-i">⬡</div>
                 <span className="logo-n">Molecule Studio</span>
-                <span className="logo-v">v3</span>
+                <span className="logo-v">v3.1.1</span>
               </div>
-              <div className="hdr-sep" />
+              <div className="sep" />
               <form className="sr" onSubmit={onSubmit}>
-                <span className="sr-ic">🔬</span>
-                <input value={q} onChange={e=>setQ(e.target.value)}
-                  placeholder="Search any molecule..." disabled={loading} autoFocus />
-                <button className="sr-btn" type="submit" disabled={loading||!q.trim()}>
-                  {loading?'...':'Go'}
-                </button>
+                <span className="si">🔬</span>
+                <input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search any molecule..." disabled={loading} autoFocus />
+                <button className="sr-b" type="submit" disabled={loading||!q.trim()}>{loading?'...':'Search'}</button>
               </form>
             </div>
-            <div className="hdr-badge"><span className="dot" /> Free · PubChem</div>
+            <div className="hdr-r">
+              <div className="hdr-badge"><span className="dot" /> Free · PubChem</div>
+            </div>
           </div>
 
           <div className="main">
             {!mol && !loading && (
               <div className="welcome">
-                <div className="w-bg" /><div className="w-grid" />
-                <h1>Visualize any <span>molecule</span></h1>
-                <p>Search a molecule to see its chemical properties, 2D structural formula, and interactive 3D ball-and-stick model. All data sourced from PubChem (NIH).</p>
-                <span className="free-tag">✦ 100% Free · No API key needed · Powered by PubChem</span>
-                <div className="chips">
-                  {picks.map(({n,f}) => (
-                    <button className="chip" key={n} onClick={()=>{setQ(n);search(n);}}>
-                      {n}<span className="cf">{f}</span>
-                    </button>
-                  ))}
+                <div className="hero">
+                  <img className="hero-img" src="hero.png" alt="" />
+                  <div className="hero-grad" />
+                  <div className="hero-content">
+                    <h1>Explore the world of<br/><span>molecules</span></h1>
+                    <p>Search any molecule to view its 2D structural formula, interactive 3D model, chemical properties, element composition, and safety information. All data from PubChem (NIH).</p>
+                    <div className="hero-tags">
+                      <span className="htag"><span className="hd" style={{background:'var(--grn)'}} /> No API Key</span>
+                      <span className="htag"><span className="hd" style={{background:'var(--blu)'}} /> 2D + 3D Structures</span>
+                      <span className="htag"><span className="hd" style={{background:'var(--ac)'}} /> Chemical Properties</span>
+                      <span className="htag"><span className="hd" style={{background:'var(--orn)'}} /> Safety Data</span>
+                      <span className="htag"><span className="hd" style={{background:'var(--ac3)'}} /> 100% Free</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="qp-section">
+                  <span className="qp-title">Popular Molecules</span>
+                  <div className="chips">
+                    {picks.map(({n,f})=> <button className="chip" key={n} onClick={()=>{setQ(n);search(n);}}>{n}<span className="cf">{f}</span></button>)}
+                  </div>
+                </div>
+
+                <div className="features">
+                  <div className="feat">
+                    <div className="feat-ic">📐</div>
+                    <div className="feat-t">2D Structure</div>
+                    <div className="feat-d">View the flat structural formula showing bonds, functional groups, and stereochemistry from PubChem.</div>
+                  </div>
+                  <div className="feat">
+                    <div className="feat-ic">🧊</div>
+                    <div className="feat-t">3D Ball-and-Stick</div>
+                    <div className="feat-d">Interactive 3D model with real conformer geometry. Rotate, zoom, and pan to explore molecular shape.</div>
+                  </div>
+                  <div className="feat">
+                    <div className="feat-ic">📊</div>
+                    <div className="feat-t">Chemical Properties</div>
+                    <div className="feat-d">Molecular weight, exact mass, XLogP, H-bond donors/acceptors, TPSA, complexity score, and more.</div>
+                  </div>
+                  <div className="feat">
+                    <div className="feat-ic">⚛️</div>
+                    <div className="feat-t">Element Legend</div>
+                    <div className="feat-d">See every element color-coded with CPK colors matching the 3D model. Know exactly what each atom is.</div>
+                  </div>
+                  <div className="feat">
+                    <div className="feat-ic">⚠️</div>
+                    <div className="feat-t">Safety Data</div>
+                    <div className="feat-d">GHS hazard statements and safety information sourced from PubChem's toxicological data.</div>
+                  </div>
+                  <div className="feat">
+                    <div className="feat-ic">🔗</div>
+                    <div className="feat-t">PubChem Source</div>
+                    <div className="feat-d">Every result links directly to its PubChem page. Data from NIH's National Library of Medicine.</div>
+                  </div>
+                </div>
+
+                <div className="footer">
+                  Molecule Studio v3.1.1 · Data from PubChem (NIH / NLM) · Open Chemistry Database<br/>
+                  3D structures from MMFF94 conformer data · 2D images from PubChem Compound
                 </div>
               </div>
             )}
 
             {loading && (
               <div style={{flex:1,position:'relative'}}>
-                <div className="load-o">
-                  <div className="spin" />
-                  <span className="load-t">Fetching {q||'molecule'} from PubChem...</span>
-                </div>
+                <div className="load-o"><div className="spin" /><span className="load-t">Fetching {q||'molecule'} from PubChem...</span></div>
               </div>
             )}
 
@@ -655,46 +687,66 @@
               <div className="result">
                 <div className="info">
                   <div className="tabs">
-                    {['overview','structure','elements'].map(t => (
-                      <button key={t} className={`tab ${tab===t?'on':''}`}
-                        onClick={()=>setTab(t)}>{t.charAt(0).toUpperCase()+t.slice(1)}</button>
+                    {['overview','structure','elements','safety'].map(t=>(
+                      <button key={t} className={`tab ${tab===t?'on':''}`} onClick={()=>setTab(t)}>
+                        {t==='overview'?'Overview':t==='structure'?'2D Structure':t==='elements'?'Elements':'Safety'}
+                      </button>
                     ))}
                   </div>
 
                   {tab==='overview' && (
                     <>
                       <div className="sec">
-                        <div className="sec-h"><span className="sec-ic">🧪</span><span className="sec-t">Identity</span></div>
+                        <div className="sh"><span className="si2">🧪</span><span className="st">Identity</span></div>
                         <div className="mn">{mol.name}</div>
                         {mol.iupac && <div className="mi">{mol.iupac}</div>}
                         <Fm text={mol.formula} cls="mf" />
                       </div>
                       <div className="sec">
-                        <div className="sec-h"><span className="sec-ic">📊</span><span className="sec-t">Properties</span></div>
+                        <div className="sh"><span className="si2">📊</span><span className="st">Properties</span></div>
                         <div className="props">
-                          {mol.molecular_weight && <div className="pr"><span className="pk">Molecular Weight</span><span className="pv">{mol.molecular_weight} g/mol</span></div>}
+                          {mol.mw && <div className="pr"><span className="pk">Molecular Weight</span><span className="pv">{mol.mw} g/mol</span></div>}
                           {mol.exact_mass && <div className="pr"><span className="pk">Exact Mass</span><span className="pv">{mol.exact_mass} Da</span></div>}
-                          {mol.xlogp != null && <div className="pr"><span className="pk">XLogP</span><span className="pv">{mol.xlogp}</span></div>}
-                          {mol.hbond_donor != null && <div className="pr"><span className="pk">H-Bond Donors</span><span className="pv">{mol.hbond_donor}</span></div>}
-                          {mol.hbond_acceptor != null && <div className="pr"><span className="pk">H-Bond Acceptors</span><span className="pv">{mol.hbond_acceptor}</span></div>}
-                          {mol.rotatable_bonds != null && <div className="pr"><span className="pk">Rotatable Bonds</span><span className="pv">{mol.rotatable_bonds}</span></div>}
-                          <div className="pr"><span className="pk">Atoms</span><span className="pv">{mol.atoms?.length || 'N/A'}</span></div>
-                          <div className="pr"><span className="pk">Bonds</span><span className="pv">{mol.bonds?.length || 'N/A'}</span></div>
+                          {mol.xlogp!=null && <div className="pr"><span className="pk">XLogP</span><span className="pv">{mol.xlogp}</span></div>}
+                          {mol.tpsa!=null && <div className="pr"><span className="pk">TPSA</span><span className="pv">{mol.tpsa} Å²</span></div>}
+                          {mol.complexity!=null && <div className="pr"><span className="pk">Complexity</span><span className="pv">{mol.complexity}</span></div>}
+                          {mol.hbd!=null && <div className="pr"><span className="pk">H-Bond Donors</span><span className="pv">{mol.hbd}</span></div>}
+                          {mol.hba!=null && <div className="pr"><span className="pk">H-Bond Acceptors</span><span className="pv">{mol.hba}</span></div>}
+                          {mol.rb!=null && <div className="pr"><span className="pk">Rotatable Bonds</span><span className="pv">{mol.rb}</span></div>}
+                          {mol.heavy_atoms!=null && <div className="pr"><span className="pk">Heavy Atoms</span><span className="pv">{mol.heavy_atoms}</span></div>}
+                          {mol.charge!=null && <div className="pr"><span className="pk">Formal Charge</span><span className="pv">{mol.charge}</span></div>}
+                          <div className="pr"><span className="pk">Total Atoms</span><span className="pv">{mol.atoms?.length||'N/A'}</span></div>
+                          <div className="pr"><span className="pk">Total Bonds</span><span className="pv">{mol.bonds?.length||'N/A'}</span></div>
                           {mol.cid && <div className="pr"><span className="pk">PubChem CID</span><span className="pv">{mol.cid}</span></div>}
                         </div>
                       </div>
+                      {(mol.smiles || mol.inchikey) && (
+                        <div className="sec">
+                          <div className="sh"><span className="si2">🔑</span><span className="st">Identifiers</span></div>
+                          <div className="props">
+                            {mol.smiles && <div className="pr"><span className="pk">SMILES</span><span className="pv" style={{fontSize:'8.5px',wordBreak:'break-all'}}>{mol.smiles}</span></div>}
+                            {mol.inchikey && <div className="pr"><span className="pk">InChIKey</span><span className="pv" style={{fontSize:'8.5px',wordBreak:'break-all'}}>{mol.inchikey}</span></div>}
+                          </div>
+                        </div>
+                      )}
                       {mol.description && (
                         <div className="sec">
-                          <div className="sec-h"><span className="sec-ic">📖</span><span className="sec-t">About</span></div>
+                          <div className="sh"><span className="si2">📖</span><span className="st">About</span></div>
                           <p className="desc">{mol.description}</p>
                         </div>
                       )}
+                      {mol.synonyms?.length > 0 && (
+                        <div className="sec">
+                          <div className="sh"><span className="si2">🏷️</span><span className="st">Also Known As</span></div>
+                          <div className="syn-list">{mol.synonyms.map((s,i)=><span className="syn-tag" key={i}>{s}</span>)}</div>
+                        </div>
+                      )}
                       <div className="sec">
-                        <div className="sec-h"><span className="sec-ic">🔗</span><span className="sec-t">Source</span></div>
-                        <p className="desc" style={{fontSize:'11px'}}>
-                          Data from <strong>PubChem</strong> (National Library of Medicine, NIH).
-                          CID: <a href={`https://pubchem.ncbi.nlm.nih.gov/compound/${mol.cid}`}
-                          target="_blank" rel="noopener" style={{color:'var(--accent)'}}>{mol.cid}</a>
+                        <div className="sh"><span className="si2">🔗</span><span className="st">Source</span></div>
+                        <p className="desc" style={{fontSize:'10px'}}>
+                          Data from <strong>PubChem</strong> — National Library of Medicine (NIH).{' '}
+                          <a href={`https://pubchem.ncbi.nlm.nih.gov/compound/${mol.cid}`}
+                            target="_blank" rel="noopener" style={{color:'var(--ac)'}}>View on PubChem →</a>
                         </p>
                       </div>
                     </>
@@ -702,15 +754,47 @@
 
                   {tab==='structure' && (
                     <div className="sec">
-                      <div className="sec-h"><span className="sec-ic">📐</span><span className="sec-t">2D Structural Formula</span></div>
-                      <Img2D url={mol.image2d} name={mol.name} />
+                      <div className="sh"><span className="si2">📐</span><span className="st">2D Structural Formula</span></div>
+                      <Img2D url={mol.img2d} name={mol.name} />
+                      <div style={{marginTop:'10px',fontSize:'10px',color:'var(--tx3)',lineHeight:'1.6'}}>
+                        The 2D structural formula shows the arrangement of atoms and bonds in a flat representation.
+                        Double bonds and aromatic rings are shown with standard chemical notation.
+                      </div>
                     </div>
                   )}
 
                   {tab==='elements' && (
                     <div className="sec">
-                      <div className="sec-h"><span className="sec-ic">⚛</span><span className="sec-t">Element Composition</span></div>
+                      <div className="sh"><span className="si2">⚛</span><span className="st">Element Composition</span></div>
                       <Legend atoms={mol.atoms} />
+                      <div style={{marginTop:'10px',fontSize:'9.5px',color:'var(--tx4)',lineHeight:'1.5'}}>
+                        Colors follow the CPK (Corey-Pauling-Koltun) convention used in molecular visualization.
+                        Each color in the 3D model corresponds to the element shown above.
+                      </div>
+                    </div>
+                  )}
+
+                  {tab==='safety' && (
+                    <div className="sec">
+                      <div className="sh"><span className="si2">⚠️</span><span className="st">GHS Hazard Statements</span></div>
+                      {mol.safety?.length > 0 ? (
+                        <div className="safety-grid">
+                          {mol.safety.map((s,i) => (
+                            <div className="safety-item" key={i}>
+                              <span className="safety-icon">⚠️</span>
+                              <span>{s}</span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div style={{fontSize:'10.5px',color:'var(--tx3)',lineHeight:'1.6'}}>
+                          No GHS hazard data available for this compound in PubChem.
+                        </div>
+                      )}
+                      <div style={{marginTop:'12px',fontSize:'9.5px',color:'var(--tx4)',lineHeight:'1.5'}}>
+                        Safety data sourced from PubChem's Globally Harmonized System (GHS) classification.
+                        Always consult Safety Data Sheets (SDS) for complete safety information.
+                      </div>
                     </div>
                   )}
                 </div>
@@ -721,13 +805,13 @@
                     <>
                       <div className="v-badge"><span className="vd" /> 3D Ball-and-Stick</div>
                       <div className="v-stats">
-                        <span className="v-chip"><b>{mol.atoms?.length}</b>&nbsp;atoms</span>
-                        <span className="v-chip"><b>{mol.bonds?.length}</b>&nbsp;bonds</span>
+                        <span className="vc2"><b>{mol.atoms?.length}</b> atoms</span>
+                        <span className="vc2"><b>{mol.bonds?.length}</b> bonds</span>
                       </div>
                       <div className="v-ctrl">
-                        <span className="vc"><span className="vk">drag</span> rotate</span>
-                        <span className="vc"><span className="vk">scroll</span> zoom</span>
-                        <span className="vc"><span className="vk">right‑drag</span> pan</span>
+                        <span className="vci"><span className="vk">drag</span> rotate</span>
+                        <span className="vci"><span className="vk">scroll</span> zoom</span>
+                        <span className="vci"><span className="vk">right‑drag</span> pan</span>
                       </div>
                     </>
                   )}
@@ -735,7 +819,6 @@
               </div>
             )}
           </div>
-
           {error && <div className="err">{error}</div>}
         </div>
       );
