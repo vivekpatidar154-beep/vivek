@@ -3,740 +3,1279 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Molecule Studio — Interactive 3D Chemistry Visualizer</title>
-<meta name="description" content="Explore 3D molecular structures interactively. Search any molecule, view proteins, balance equations, explore the periodic table. Free chemistry tool.">
-<meta property="og:title" content="Molecule Studio v4.0">
-<meta property="og:description" content="Free 3D chemistry visualizer — molecules, proteins, periodic table, equation balancer.">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="theme-color" content="#6366f1">
+<title>Molecule Studio — 3D Chemistry Visualizer</title>
+<meta name="description" content="Free 3D molecular structure visualizer. Search any molecule, balance equations, explore the periodic table.">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚗</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/3Dmol/2.0.4/3Dmol-min.js"></script>
 <style>
-:root{--bg:#0a0e1a;--sidebar-bg:#111827;--card-bg:#1f2937;--card-bg-2:#111827;--text:#f9fafb;--text-muted:#9ca3af;--text-faint:#6b7280;--accent:#6366f1;--accent-2:#8b5cf6;--accent-glow:rgba(99,102,241,.15);--border:#374151;--border-light:#1f2937;--success:#10b981;--error:#ef4444;--warning:#f59e0b;--radius:8px;--radius-lg:12px}
-body.light-mode{--bg:#f8fafc;--sidebar-bg:#fff;--card-bg:#f1f5f9;--card-bg-2:#e2e8f0;--text:#0f172a;--text-muted:#64748b;--text-faint:#94a3b8;--accent:#4f46e5;--accent-2:#7c3aed;--accent-glow:rgba(79,70,229,.1);--border:#e2e8f0;--border-light:#f1f5f9;--success:#059669;--error:#dc2626;--warning:#d97706}
-*{box-sizing:border-box;margin:0;padding:0}body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden}
-#app{display:none;flex-direction:column;height:100vh}#main-layout{display:flex;flex:1;overflow:hidden}
-::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
-a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
-/* Loading */
-#loading-screen{position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px}
-.atom-anim{position:relative;width:80px;height:80px}.atom-anim .nucleus{width:14px;height:14px;background:var(--accent);border-radius:50%;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);box-shadow:0 0 12px var(--accent)}
-.orbit{position:absolute;inset:0;border:1.5px solid var(--accent);border-radius:50%;opacity:.4}
-.orbit:nth-child(2){animation:orb1 2s linear infinite}.orbit:nth-child(3){animation:orb2 3s linear infinite;transform:rotate(60deg)}.orbit:nth-child(4){animation:orb3 4s linear infinite;transform:rotate(-60deg)}
-.orbit::after{content:'';position:absolute;top:-3px;left:50%;width:6px;height:6px;background:var(--accent);border-radius:50%;transform:translateX(-50%)}
-@keyframes orb1{to{transform:rotate(360deg)}}@keyframes orb2{to{transform:rotate(420deg)}}@keyframes orb3{to{transform:rotate(300deg)}}
-#loading-screen h2{font-size:20px;font-weight:700;color:var(--text)}#loading-screen p{font-size:13px;color:var(--text-muted)}
-/* Navbar */
-#navbar{height:56px;background:var(--sidebar-bg);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 16px;z-index:100;flex-shrink:0}
-.nav-left{display:flex;align-items:center;gap:10px}.nav-left svg{width:28px;height:28px}
-.nav-title{font-weight:700;font-size:16px}.nav-badge{font-size:10px;background:var(--accent);color:#fff;padding:2px 6px;border-radius:4px;font-weight:600}
-.nav-right{display:flex;align-items:center;gap:4px}
-.nav-btn{background:none;border:1px solid var(--border);color:var(--text-muted);width:36px;height:36px;border-radius:var(--radius);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;transition:all .15s}
-.nav-btn:hover{background:var(--accent-glow);color:var(--accent);border-color:var(--accent)}.nav-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
-.nav-btn-text{width:auto;padding:0 10px;font-size:12px;font-weight:500;gap:4px}
-#menu-btn{display:none}
-/* Sidebar */
-#sidebar{width:300px;min-width:300px;background:var(--sidebar-bg);border-right:1px solid var(--border);overflow-y:auto;height:100%;display:flex;flex-direction:column}
-.sb-section{border-bottom:1px solid var(--border)}
-.sb-header{width:100%;background:none;border:none;color:var(--text);padding:12px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;font-size:13px;font-weight:600;font-family:inherit}
-.sb-header:hover{background:var(--accent-glow)}.sb-arrow{font-size:10px;color:var(--text-faint);transition:transform .2s}
-.sb-header.open .sb-arrow{transform:rotate(90deg)}.sb-body{display:none;padding:10px 14px 14px}.sb-body.open{display:block}
-/* Search */
-.search-wrap{display:flex;gap:6px}.search-input{flex:1;background:var(--card-bg);border:1px solid var(--border);color:var(--text);padding:8px 10px;border-radius:var(--radius);font-size:13px;font-family:inherit;outline:none}
-.search-input:focus{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-glow)}
-.search-btn{background:var(--accent);color:#fff;border:none;padding:8px 14px;border-radius:var(--radius);cursor:pointer;font-size:13px;font-weight:500;font-family:inherit;white-space:nowrap}
-.search-btn:hover{opacity:.9}.search-btn:disabled{opacity:.4;cursor:not-allowed}
-.ac-list{background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius);margin-top:4px;max-height:200px;overflow-y:auto;display:none}
-.ac-item{padding:8px 10px;font-size:12px;cursor:pointer;border-bottom:1px solid var(--border-light)}.ac-item:hover{background:var(--accent-glow);color:var(--accent)}.ac-item:last-child{border:none}
-/* Molecule Info */
-.mol-img{width:150px;height:150px;border-radius:var(--radius);background:#fff;display:block;margin:0 auto 10px;object-fit:contain}
-.mol-name{font-size:18px;font-weight:700;margin-bottom:2px}.mol-formula{font-size:15px;color:var(--accent);font-weight:500;margin-bottom:8px}.mol-formula sub{font-size:.75em}
-.prop-table{width:100%;font-size:12px;border-collapse:collapse}.prop-table td{padding:5px 0;border-bottom:1px solid var(--border-light)}.prop-table td:first-child{color:var(--text-muted)}.prop-table td:last-child{text-align:right;font-weight:500;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.wiki-text{font-size:12px;color:var(--text-muted);font-style:italic;line-height:1.6;margin:8px 0}
-.ext-links{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}.ext-link{font-size:11px;padding:4px 8px;border:1px solid var(--border);border-radius:4px;color:var(--text-muted);transition:all .15s}.ext-link:hover{color:var(--accent);border-color:var(--accent);text-decoration:none}
-/* Library */
-.lib-tabs{display:flex;gap:2px;margin-bottom:8px;flex-wrap:wrap}.lib-tab{font-size:11px;padding:4px 8px;border:1px solid var(--border);border-radius:4px;background:none;color:var(--text-muted);cursor:pointer;font-family:inherit}
-.lib-tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
-.lib-grid{display:flex;flex-direction:column;gap:4px;max-height:300px;overflow-y:auto}
-.lib-card{display:flex;align-items:center;gap:8px;padding:8px;background:var(--card-bg);border:1px solid var(--border-light);border-radius:var(--radius);cursor:pointer;transition:all .15s}
-.lib-card:hover{border-color:var(--accent);background:var(--accent-glow)}.lib-card .lc-name{font-size:12px;font-weight:500;flex:1}.lib-card .lc-formula{font-size:10px;color:var(--text-faint)}
-.cat-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
-/* Proteins */
-.prot-grid{display:flex;flex-direction:column;gap:4px;max-height:350px;overflow-y:auto}
-.prot-card{display:flex;gap:8px;padding:8px;background:var(--card-bg);border:1px solid var(--border-light);border-radius:var(--radius);cursor:pointer;transition:all .15s}
-.prot-card:hover{border-color:var(--accent)}.prot-card img{width:50px;height:50px;border-radius:4px;object-fit:cover;background:var(--card-bg-2)}
-.prot-info{flex:1;min-width:0}.prot-info h4{font-size:12px;font-weight:600}.prot-info .pdb-id{font-size:10px;color:var(--accent);font-weight:600}.prot-info p{font-size:10px;color:var(--text-faint);margin-top:2px}
-/* Tools */
-.tool-tabs{display:flex;gap:2px;margin-bottom:10px}.tool-tab{flex:1;text-align:center;font-size:11px;padding:6px;border:1px solid var(--border);border-radius:4px;background:none;color:var(--text-muted);cursor:pointer;font-family:inherit}
-.tool-tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}.tool-panel{display:none}.tool-panel.active{display:block}
-.eq-input{width:100%;background:var(--card-bg);border:1px solid var(--border);color:var(--text);padding:8px 10px;border-radius:var(--radius);font-size:13px;font-family:'Courier New',monospace;margin-bottom:6px;outline:none}
-.eq-input:focus{border-color:var(--accent)}.eq-result{padding:10px;background:var(--card-bg);border-radius:var(--radius);font-family:'Courier New',monospace;font-size:13px;margin:8px 0;color:var(--success);word-break:break-all}
-.eq-chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}.eq-chip{font-size:10px;padding:3px 6px;background:var(--card-bg);border:1px solid var(--border);border-radius:4px;cursor:pointer;color:var(--text-muted);font-family:inherit}.eq-chip:hover{border-color:var(--accent);color:var(--accent)}
-.lip-row{display:flex;align-items:center;justify-content:space-between;padding:4px 0;font-size:12px;border-bottom:1px solid var(--border-light)}.lip-pass{color:var(--success)}.lip-fail{color:var(--error)}
-.lip-verdict{padding:6px 10px;border-radius:var(--radius);font-size:12px;font-weight:600;text-align:center;margin-top:6px}
-.ctrl-group{margin-bottom:10px}.ctrl-label{font-size:11px;color:var(--text-muted);margin-bottom:4px;display:block}
-.ctrl-radios{display:flex;flex-wrap:wrap;gap:4px}.ctrl-radio{font-size:11px;padding:4px 8px;border:1px solid var(--border);border-radius:4px;background:none;color:var(--text-muted);cursor:pointer;font-family:inherit}
-.ctrl-radio.active{background:var(--accent);color:#fff;border-color:var(--accent)}
-.ctrl-toggle{display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:6px}
-.toggle-sw{width:36px;height:20px;background:var(--border);border-radius:10px;cursor:pointer;position:relative;transition:background .2s}
-.toggle-sw.on{background:var(--accent)}.toggle-sw::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;background:#fff;border-radius:50%;transition:left .2s}
-.toggle-sw.on::after{left:18px}
-.bg-swatch{width:28px;height:28px;border-radius:50%;border:2px solid var(--border);cursor:pointer;display:inline-block;margin-right:4px}.bg-swatch.active{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-glow)}
-/* Viewer */
-#viewer-area{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative;background:var(--bg)}
-.viewer-tabs{display:flex;background:var(--sidebar-bg);border-bottom:1px solid var(--border);flex-shrink:0}
-.viewer-tab{padding:10px 16px;font-size:13px;font-weight:500;color:var(--text-muted);cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;font-family:inherit}
-.viewer-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
-.viewer-panel{flex:1;position:relative;display:none}.viewer-panel.active{display:flex;flex-direction:column}
-#mol-viewer{flex:1;position:relative}
-#molview-wrap{flex:1;position:relative}#molview-frame{width:100%;height:100%;border:none}
-.split-wrap{flex:1;display:flex;gap:1px;background:var(--border)}.split-wrap>div{flex:1;background:var(--bg);position:relative}
-#split-viewer{width:100%;height:100%}#split-frame{width:100%;height:100%;border:none}
-.float-toolbar{position:absolute;top:10px;right:10px;display:flex;flex-direction:column;gap:4px;z-index:10}
-.float-btn{width:36px;height:36px;background:rgba(17,24,39,.85);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border:1px solid var(--border);border-radius:var(--radius);color:var(--text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;transition:all .15s}
-.float-btn:hover{color:var(--accent);border-color:var(--accent)}
-.bottom-strip{height:32px;background:var(--sidebar-bg);border-top:1px solid var(--border);display:flex;align-items:center;padding:0 12px;font-size:11px;color:var(--text-faint);flex-shrink:0;gap:12px}
-.atom-tooltip{position:absolute;background:rgba(0,0,0,.85);color:#fff;padding:4px 8px;border-radius:4px;font-size:11px;pointer-events:none;z-index:20;display:none}
-/* Periodic Table Modal */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:500;display:none;align-items:center;justify-content:center;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
-.modal-overlay.open{display:flex}
-.pt-modal{background:var(--sidebar-bg);border:1px solid var(--border);border-radius:var(--radius-lg);width:95vw;max-width:1100px;max-height:90vh;overflow:auto;padding:16px}
-.pt-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}.pt-header h2{font-size:18px;font-weight:700}
-.pt-close{background:none;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:var(--radius)}
-.pt-close:hover{background:var(--card-bg)}
-.pt-filters{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px}
-.pt-grid{display:grid;grid-template-columns:repeat(18,1fr);gap:2px;margin-bottom:8px}
-.pt-cell{width:100%;aspect-ratio:.8;border-radius:3px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;font-size:8px;position:relative;border:1px solid transparent;padding:1px}
-.pt-cell:hover{transform:scale(1.15);z-index:10;border-color:var(--accent);box-shadow:0 2px 8px rgba(0,0,0,.3)}
-.pt-cell.dimmed{opacity:.15}.pt-cell .pt-num{font-size:7px;color:var(--text-faint);position:absolute;top:1px;left:2px}
-.pt-cell .pt-sym{font-size:13px;font-weight:700;line-height:1}.pt-cell .pt-name{font-size:6px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
-.pt-cell .pt-mass{font-size:6px;color:var(--text-faint)}
-.pt-lanthanides,.pt-actinides{display:grid;grid-template-columns:repeat(15,1fr);gap:2px;margin-top:4px;margin-left:calc(100%/18*3)}
-.el-popup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--sidebar-bg);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;z-index:600;min-width:260px;display:none;box-shadow:0 8px 32px rgba(0,0,0,.4)}
-.el-popup.open{display:block}
-.el-popup h3{font-size:36px;font-weight:700;text-align:center}.el-popup h4{font-size:14px;text-align:center;color:var(--text-muted);margin-bottom:10px}
-/* Footer */
-.sb-footer{padding:10px 14px;font-size:11px;color:var(--text-faint);border-top:1px solid var(--border);margin-top:auto}
-/* Toast */
-#toast-container{position:fixed;bottom:20px;right:20px;z-index:9000;display:flex;flex-direction:column;gap:6px}
-.toast{padding:10px 14px;border-radius:var(--radius);font-size:12px;display:flex;align-items:center;gap:6px;animation:slideUp .3s ease;min-width:200px;box-shadow:0 4px 12px rgba(0,0,0,.3)}
-.toast.info{background:#1e3a5f;border:1px solid #2563eb;color:#93c5fd}.toast.success{background:#064e3b;border:1px solid var(--success);color:#6ee7b7}
-.toast.error{background:#450a0a;border:1px solid var(--error);color:#fca5a5}.toast.warning{background:#451a03;border:1px solid var(--warning);color:#fcd34d}
-@keyframes slideUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-/* Sidebar overlay for mobile */
-.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:49}
-/* Mobile */
-@media(max-width:768px){
-#menu-btn{display:flex}
-#sidebar{position:fixed;left:-300px;top:56px;height:calc(100vh - 56px);z-index:50;transition:left .25s}
-#sidebar.open{left:0}.sidebar-overlay.open{display:block}
-.pt-grid{font-size:6px}.pt-cell .pt-sym{font-size:10px}.pt-cell .pt-name{display:none}
-.nav-btn-text span{display:none}
+:root {
+  --bg:           #050a0f;
+  --bg-2:         #0a1628;
+  --bg-3:         #0d1f35;
+  --sidebar-bg:   #070d17;
+  --card-bg:      #0d1f35;
+  --card-bg-2:    #112240;
+  --text:         #e2e8f0;
+  --text-2:       #7aa2c8;
+  --text-3:       #3d6080;
+  --accent:       #00d4ff;
+  --accent-2:     #0088cc;
+  --accent-glow:  rgba(0, 212, 255, 0.12);
+  --accent-glow2: rgba(0, 212, 255, 0.05);
+  --border:       rgba(0, 212, 255, 0.12);
+  --border-2:     rgba(0, 212, 255, 0.25);
+  --success:      #00ff88;
+  --error:        #ff4560;
+  --warning:      #ffaa00;
+  --radius:       8px;
+  --radius-lg:    14px;
 }
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+html, body { height:100%; overflow:hidden; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; background:var(--bg); color:var(--text); }
+a { color:var(--accent); text-decoration:none; } a:hover { text-decoration:underline; }
+::-webkit-scrollbar { width:5px; } ::-webkit-scrollbar-track { background:transparent; } ::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+button { cursor:pointer; font-family:inherit; }
+
+/* Loading */
+#loading { position:fixed; inset:0; z-index:9999; background:var(--bg); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; }
+.ld-atom { position:relative; width:60px; height:60px; }
+.ld-atom .core { width:10px; height:10px; background:var(--accent); border-radius:50%; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); box-shadow:0 0 8px var(--accent); }
+.ld-orb { position:absolute; inset:0; border:1.5px solid var(--accent); border-radius:50%; opacity:0.3; }
+.ld-orb:nth-child(2) { animation:spin1 2s linear infinite; }
+.ld-orb:nth-child(3) { animation:spin2 3s linear infinite; transform:rotate(60deg); }
+.ld-orb:nth-child(4) { animation:spin3 4s linear infinite; transform:rotate(-60deg); }
+.ld-orb::after { content:''; position:absolute; top:-3px; left:50%; width:5px; height:5px; background:var(--accent); border-radius:50%; transform:translateX(-50%); }
+@keyframes spin1 { to { transform:rotate(360deg); } }
+@keyframes spin2 { to { transform:rotate(420deg); } }
+@keyframes spin3 { to { transform:rotate(300deg); } }
+#loading h2 { font-size:16px; font-weight:700; } #loading p { font-size:12px; color:var(--text-3); }
+
+/* App */
+#app { display:flex; flex-direction:column; height:100vh; }
+
+/* Navbar */
+#navbar { height:56px; background:var(--bg); border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; padding:0 16px; flex-shrink:0; z-index:100; }
+.nav-l { display:flex; align-items:center; gap:10px; }
+.nav-l svg { width:28px; height:28px; }
+.nav-title { font-weight:700; font-size:16px; letter-spacing:-0.01em; }
+.nav-r { display:flex; align-items:center; gap:6px; }
+.nb { background:none; border:1px solid var(--border); color:var(--text-2); width:34px; height:34px; border-radius:var(--radius); display:flex; align-items:center; justify-content:center; font-size:15px; transition:background 0.15s,color 0.15s,border-color 0.15s; }
+.nb:hover { border-color:var(--accent); color:var(--accent); background:var(--accent-light); }
+#menu-btn { display:none; }
+
+/* Layout */
+#layout { display:flex; flex:1; overflow:hidden; min-height:0; }
+.sb-ov { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.3); z-index:49; }
+
+/* Sidebar */
+#sidebar { width:280px; flex-shrink:0; overflow-y:auto; height:100%; background:var(--bg); border-right:1px solid var(--border); display:flex; flex-direction:column; }
+.s-label { font-size:11px; font-weight:600; letter-spacing:0.06em; text-transform:uppercase; color:var(--text-3); padding:14px 12px 6px; }
+.s-sep { border:none; border-top:1px solid var(--border); margin:0; }
+.s-pad { padding:6px 12px 12px; }
+
+/* Search */
+.s-row { display:flex; gap:6px; }
+.s-input { flex:1; background:var(--bg-2); border:1px solid var(--border); color:var(--text); padding:8px 10px; border-radius:var(--radius); font-size:13px; font-family:inherit; outline:none; transition:border-color 0.15s; }
+.s-input:focus { border-color:var(--accent); }
+.s-btn { background:var(--accent); color:#fff; border:none; padding:8px 14px; border-radius:var(--radius); font-size:13px; font-weight:500; font-family:inherit; white-space:nowrap; transition:opacity 0.15s; }
+.s-btn:hover { opacity:0.9; } .s-btn:disabled { opacity:0.4; cursor:not-allowed; }
+.ac-list { background:var(--bg); border:1px solid var(--border); border-radius:var(--radius); margin-top:4px; max-height:180px; overflow-y:auto; display:none; box-shadow:var(--shadow); }
+.ac-item { padding:8px 10px; font-size:13px; cursor:pointer; border-bottom:1px solid var(--border); } .ac-item:last-child { border:none; } .ac-item:hover { background:var(--accent-light); color:var(--accent); }
+
+/* Info Panel */
+.mol-img { width:120px; height:120px; border-radius:var(--radius); border:1px solid var(--border); background:var(--bg-2); display:block; margin:0 auto 8px; object-fit:contain; }
+.mol-name { font-size:16px; font-weight:700; text-align:center; margin-bottom:2px; }
+.mol-form { font-size:14px; color:var(--accent); font-weight:500; text-align:center; margin-bottom:10px; } .mol-form sub { font-size:0.75em; }
+.pr-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px 10px; }
+.pr-cell { min-width:0; }
+.pr-cell .pr-l { font-size:10px; color:var(--text-3); text-transform:uppercase; letter-spacing:0.04em; font-weight:500; } .pr-cell .pr-v { font-size:13px; font-weight:500; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ext-links { display:flex; flex-wrap:wrap; gap:4px; margin-top:10px; }
+.ext-link { font-size:11px; padding:4px 10px; border:1px solid var(--border); border-radius:6px; color:var(--text-2); transition:all 0.15s; display:inline-block; } .ext-link:hover { border-color:var(--accent); color:var(--accent); text-decoration:none; }
+
+/* Library */
+.lib-tabs { display:flex; gap:4px; flex-wrap:wrap; margin-bottom:6px; }
+.lt { font-size:11px; padding:5px 10px; border-radius:20px; border:none; font-family:inherit; font-weight:500; transition:all 0.15s; }
+.lt.on { background:var(--accent); color:#fff; } .lt:not(.on) { background:var(--bg-2); color:var(--text-2); } .lt:not(.on):hover { background:var(--bg-3); }
+.lib-list { display:flex; flex-direction:column; gap:3px; max-height:260px; overflow-y:auto; }
+.lc { display:flex; align-items:center; gap:8px; padding:8px 10px; background:var(--bg); border:1px solid var(--border); border-radius:var(--radius); cursor:pointer; transition:all 0.15s; }
+.lc:hover { border-color:var(--accent); background:var(--accent-light); }
+.lc-dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+.lc-n { font-size:13px; font-weight:500; flex:1; } .lc-f { font-size:11px; color:var(--text-3); }
+.lc-arr { opacity:0; color:var(--accent); font-size:12px; transition:opacity 0.15s; } .lc:hover .lc-arr { opacity:1; }
+.filter-in { width:100%; background:var(--bg-2); border:1px solid var(--border); color:var(--text); padding:6px 10px; border-radius:var(--radius); font-size:12px; font-family:inherit; outline:none; margin-bottom:6px; } .filter-in:focus { border-color:var(--accent); }
+
+/* Tools */
+.tt { display:flex; border-bottom:1px solid var(--border); margin-bottom:8px; }
+.ttb { flex:1; text-align:center; font-size:12px; padding:8px 0; border:none; background:none; color:var(--text-3); font-family:inherit; font-weight:500; border-bottom:2px solid transparent; cursor:pointer; transition:all 0.15s; }
+.ttb.on { color:var(--accent); border-bottom-color:var(--accent); }
+.tp { display:none; } .tp.on { display:block; }
+.eq-in { width:100%; background:var(--bg-2); border:1px solid var(--border); color:var(--text); padding:8px 10px; border-radius:var(--radius); font-size:13px; font-family:'Courier New',monospace; margin-bottom:6px; outline:none; } .eq-in:focus { border-color:var(--accent); }
+.eq-res { padding:8px; background:var(--bg-2); border-radius:var(--radius); font-family:'Courier New',monospace; font-size:13px; margin:6px 0; word-break:break-all; }
+.eq-chips { display:flex; flex-wrap:wrap; gap:4px; margin-top:6px; }
+.eq-c { font-size:10px; padding:4px 8px; background:var(--bg-2); border:none; border-radius:20px; cursor:pointer; color:var(--text-2); font-family:inherit; transition:all 0.15s; } .eq-c:hover { background:var(--accent-light); color:var(--accent); }
+.t-btn { background:var(--accent); color:#fff; border:none; border-radius:var(--radius); padding:8px; width:100%; font-size:13px; font-weight:500; font-family:inherit; transition:opacity 0.15s; margin-bottom:4px; } .t-btn:hover { opacity:0.9; }
+
+/* Viewer Controls */
+.cg { margin-bottom:10px; } .cg-l { font-size:11px; color:var(--text-3); font-weight:500; margin-bottom:5px; display:block; }
+.cr { display:flex; flex-wrap:wrap; gap:4px; }
+.crb { font-size:11px; padding:5px 10px; border:1px solid var(--border); border-radius:20px; background:none; color:var(--text-2); font-family:inherit; transition:all 0.15s; }
+.crb.on { background:var(--accent); color:#fff; border-color:var(--accent); }
+.bg-s { width:24px; height:24px; border-radius:50%; border:2px solid var(--border); cursor:pointer; display:inline-block; margin-right:4px; transition:border-color 0.15s; } .bg-s.on { border-color:var(--accent); }
+.tgl-row { display:flex; align-items:center; gap:8px; font-size:12px; color:var(--text-2); margin-bottom:6px; }
+.tgl { width:34px; height:18px; background:var(--bg-3); border-radius:9px; cursor:pointer; position:relative; transition:background 0.2s; flex-shrink:0; }
+.tgl.on { background:var(--accent); } .tgl::after { content:''; position:absolute; top:2px; left:2px; width:14px; height:14px; background:#fff; border-radius:50%; transition:left 0.2s; } .tgl.on::after { left:18px; }
+
+.sb-foot { padding:12px; font-size:10px; color:var(--text-3); border-top:1px solid var(--border); margin-top:auto; }
+
+/* Viewer */
+#viewer-wrap { flex:1; position:relative; min-width:0; min-height:0; height:100%; background:var(--bg-2); }
+#viewer { width:100%; height:100%; position:absolute; top:0; left:0; right:0; bottom:0; }
+#viewer canvas { width:100% !important; height:100% !important; }
+.ftbar { position:absolute; top:10px; right:10px; display:flex; flex-direction:column; gap:5px; z-index:10; }
+.fb { width:36px; height:36px; background:var(--bg); border:1px solid var(--border); border-radius:var(--radius); color:var(--text-2); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:15px; transition:all 0.15s; box-shadow:var(--shadow); }
+.fb:hover { border-color:var(--accent); color:var(--accent); }
+.bot { height:28px; background:var(--bg); border-top:1px solid var(--border); display:flex; align-items:center; padding:0 12px; font-size:11px; color:var(--text-3); position:absolute; bottom:0; left:0; right:0; z-index:5; }
+.a-tt { position:absolute; background:rgba(33,37,41,0.9); color:#fff; padding:3px 7px; border-radius:4px; font-size:11px; pointer-events:none; z-index:20; display:none; }
+
+/* Sci-Fi Global Theme Extensions */
+body {
+  background: var(--bg);
+  background-image:
+    radial-gradient(ellipse at 20% 50%, rgba(0,100,200,0.04) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 20%, rgba(0,212,255,0.03) 0%, transparent 50%);
+}
+.accent-glow {
+  box-shadow: 0 0 12px rgba(0,212,255,0.3), 0 0 24px rgba(0,212,255,0.1);
+}
+#navbar {
+  background: rgba(7, 13, 23, 0.95);
+  border-bottom: 1px solid var(--border-2);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 1px 0 rgba(0,212,255,0.08);
+}
+.nav-title {
+  color: var(--accent);
+  text-shadow: 0 0 20px rgba(0,212,255,0.4);
+  letter-spacing: 0.05em;
+}
+.nav-badge {
+  background: transparent;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+}
+#sidebar {
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--border);
+}
+.s-label {
+  color: var(--text-2);
+  letter-spacing: 0.06em;
+  font-size: 11px;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border);
+}
+.s-label:hover { background: var(--accent-glow2); color: var(--accent); }
+.s-label.open { color: var(--accent); }
+
+.s-input {
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  color: var(--text);
+  caret-color: var(--accent);
+}
+.s-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-glow), 0 0 8px rgba(0,212,255,0.15);
+  outline: none;
+}
+.s-input::placeholder { color: var(--text-3); }
+.s-btn {
+  background: transparent;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  transition: all 0.2s;
+}
+.s-btn:hover {
+  background: var(--accent);
+  color: var(--bg);
+  box-shadow: 0 0 16px rgba(0,212,255,0.35);
+}
+.lc {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  transition: all 0.18s;
+}
+.lc:hover {
+  border-color: var(--accent);
+  background: var(--accent-glow2);
+  box-shadow: 0 0 10px rgba(0,212,255,0.1);
+  transform: translateX(2px);
+}
+.lt { border-color: var(--border); color: var(--text-3); background: transparent; }
+.lt.on { background: var(--accent); color: var(--bg); border-color: var(--accent); box-shadow: 0 0 12px rgba(0,212,255,0.3); }
+.ac-list { background: var(--bg-3); border: 1px solid var(--border-2); box-shadow: 0 8px 24px rgba(0,0,0,0.6), 0 0 0 1px var(--border); }
+.ac-item:hover { background: var(--accent-glow); color: var(--accent); }
+.mol-name { color: var(--text); }
+.mol-form { color: var(--accent); text-shadow: 0 0 10px rgba(0,212,255,0.3); }
+.pr-l { color: var(--text-3); }
+.pr-v { color: var(--text); }
+.pr-cell { border-bottom-color: var(--border); }
+.ext-link {
+  border-color: var(--border);
+  color: var(--text-3);
+  background: transparent;
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+.ext-link:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-glow2);
+  text-decoration: none;
+}
+#viewer-wrap { background: var(--bg); }
+.ttb { color: var(--text-3); background: transparent; border: none; }
+.ttb.on {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  text-shadow: 0 0 8px rgba(0,212,255,0.4);
+}
+.tt { background: rgba(7,13,23,0.9); border-bottom: 1px solid var(--border); }
+.fb {
+  background: rgba(7,13,23,0.9);
+  border: 1px solid var(--border-2);
+  color: var(--text-2);
+  backdrop-filter: blur(8px);
+}
+.fb:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 0 12px rgba(0,212,255,0.2);
+}
+.bot {
+  background: rgba(7,13,23,0.95);
+  border-top: 1px solid var(--border);
+  color: var(--text-3);
+  font-family: 'Courier New', monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+.eq-in { background: var(--bg-3); border-color: var(--border); color: var(--text); font-family: 'Courier New', monospace; }
+.eq-in:focus { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-glow); }
+#eq-res { background: var(--bg-3); border: 1px solid var(--border); color: var(--success); font-family: 'Courier New', monospace; }
+.eq-c { background: var(--bg-3); border-color: var(--border); color: var(--text-3); }
+.eq-c:hover { border-color: var(--accent); color: var(--accent); }
+.lip-pass { color: var(--success); }
+.lip-fail { color: var(--error); }
+.pt-modal { background: var(--bg-2); border: 1px solid var(--border-2); box-shadow: 0 24px 80px rgba(0,0,0,0.8), 0 0 0 1px var(--border); }
+.modal-overlay { background: rgba(0,0,0,0.75); backdrop-filter: blur(6px); }
+
+/* Toasts */
+.toast { background: rgba(0,20,40,0.95) !important; border: 1px solid var(--accent) !important; color: var(--accent) !important; }
+.toast[style*="198754"] { background: rgba(0,40,20,0.95) !important; border-color: var(--success) !important; color: var(--success) !important; }
+.toast[style*="dc3545"] { background: rgba(40,0,10,0.95) !important; border-color: var(--error) !important; color: var(--error) !important; }
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+#loading { background: var(--bg); }
+#loading h2 { color: var(--accent); text-shadow: 0 0 20px rgba(0,212,255,0.5); letter-spacing: 0.1em; }
+#loading p { color: var(--text-3); letter-spacing: 0.15em; font-size: 11px; text-transform: uppercase; }
+.core { background: var(--accent); box-shadow: 0 0 16px rgba(0,212,255,0.8), 0 0 32px rgba(0,212,255,0.4); }
+.ld-orb { border-color: var(--accent); opacity: 0.5; }
+.ld-orb::after { background: var(--accent); box-shadow: 0 0 8px rgba(0,212,255,0.8); }
+
+.crb { background: transparent; border-color: var(--border); color: var(--text-3); }
+.crb.on { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+.cg-l { color: var(--text-3); letter-spacing: 0.05em; font-size: 10px; text-transform: uppercase; }
+.tgl { background: var(--border-2); }
+.tgl.on { background: var(--accent); box-shadow: 0 0 8px rgba(0,212,255,0.4); }
+.bg-s { border-color: var(--border-2); }
+.bg-s.on { border-color: var(--accent); box-shadow: 0 0 8px rgba(0,212,255,0.4); }
+.sb-foot { color: var(--text-3); border-top-color: var(--border); font-size: 10px; letter-spacing: 0.06em; }
+.nb { background: transparent; border-color: var(--border); color: var(--text-3); }
+.nb:hover { background: var(--accent-glow); color: var(--accent); border-color: var(--accent); box-shadow: 0 0 8px rgba(0,212,255,0.2); }
+.nb.on { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+.lc-prot { background: var(--card-bg); border-color: var(--border); }
+.lc-prot:hover { border-color: var(--accent); box-shadow: 0 0 10px rgba(0,212,255,0.1); }
+.pdb-id { color: var(--accent); }
+.el-popup { background: var(--bg-2); border: 1px solid var(--border-2); box-shadow: 0 16px 48px rgba(0,0,0,0.8); }
+.wiki-text { color: var(--text-3); border-left: 2px solid var(--border-2); padding-left: 8px; font-style: italic; }
+.mol-img { background: #0a1628; border: 1px solid var(--border); filter: invert(1) hue-rotate(180deg); }
+
+
+/* Landing page wrapper */
+#landing {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  overflow-y: auto;
+  z-index: 200;
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+#landing.hide {
+  opacity: 0;
+  transform: translateY(-16px);
+  pointer-events: none;
+}
+
+/* Landing navbar */
+#land-nav {
+  position: sticky;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 40px;
+  height: 60px;
+  background: rgba(5,10,15,0.9);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(16px);
+  z-index: 10;
+}
+.land-nav-left { display: flex; align-items: center; gap: 10px; }
+.land-title { font-size: 13px; font-weight: 700; color: var(--accent); letter-spacing: 0.12em; }
+.land-version { font-size: 9px; color: var(--text-3); border: 1px solid var(--border-2); padding: 1px 5px; border-radius: 3px; letter-spacing: 0.06em; }
+.land-launch-btn {
+  background: transparent;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  padding: 7px 18px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  transition: all 0.2s;
+}
+.land-launch-btn:hover {
+  background: var(--accent);
+  color: var(--bg);
+  box-shadow: 0 0 20px rgba(0,212,255,0.35);
+}
+
+/* Hero section */
+.hero {
+  min-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 60px 20px 40px;
+  position: relative;
+  overflow: hidden;
+}
+.hero-badge {
+  font-size: 11px;
+  color: var(--accent);
+  border: 1px solid var(--border-2);
+  padding: 6px 16px;
+  border-radius: 20px;
+  letter-spacing: 0.08em;
+  margin-bottom: 28px;
+  background: var(--accent-glow2);
+}
+.hero-title {
+  font-size: clamp(36px, 6vw, 72px);
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  margin-bottom: 20px;
+}
+.hero-accent {
+  color: var(--accent);
+  text-shadow: 0 0 40px rgba(0,212,255,0.4);
+}
+.hero-sub {
+  font-size: clamp(14px, 2vw, 18px);
+  color: var(--text-2);
+  max-width: 560px;
+  line-height: 1.7;
+  margin-bottom: 36px;
+}
+.hero-btns { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-bottom: 20px; }
+.hero-btn-primary {
+  background: var(--accent);
+  color: var(--bg);
+  border: none;
+  padding: 13px 28px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.03em;
+  transition: all 0.2s;
+  box-shadow: 0 0 24px rgba(0,212,255,0.3);
+}
+.hero-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 36px rgba(0,212,255,0.5);
+}
+.hero-btn-secondary {
+  background: transparent;
+  color: var(--text-2);
+  border: 1px solid var(--border-2);
+  padding: 13px 28px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.hero-btn-secondary:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-glow2); }
+
+/* Hero search */
+.hero-search-wrap { margin-top: 8px; width: 100%; max-width: 480px; }
+.hero-search-input {
+  width: 100%;
+  background: var(--bg-3);
+  border: 1px solid var(--accent);
+  color: var(--text);
+  padding: 13px 18px;
+  border-radius: 8px;
+  font-size: 15px;
+  outline: none;
+  box-shadow: 0 0 16px rgba(0,212,255,0.15);
+  caret-color: var(--accent);
+}
+
+/* Animated hero visual */
+.hero-visual {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: -1;
+}
+.hero-atom-wrap {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 500px;
+  height: 500px;
+  opacity: 0.06;
+}
+.hero-nucleus {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  width: 20px; height: 20px;
+  background: var(--accent);
+  border-radius: 50%;
+  box-shadow: 0 0 40px var(--accent);
+}
+.hero-orbit {
+  position: absolute;
+  inset: 0;
+  border: 1px solid var(--accent);
+  border-radius: 50%;
+}
+.h-orb1 { animation: orb1 6s linear infinite; }
+.h-orb2 { animation: orb2 9s linear infinite; transform: rotate(60deg) scaleY(0.4); }
+.h-orb3 { animation: orb3 12s linear infinite; transform: rotate(-60deg) scaleY(0.4); }
+.hero-glow {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  width: 300px; height: 300px;
+  background: radial-gradient(circle, rgba(0,212,255,0.08) 0%, transparent 70%);
+  border-radius: 50%;
+}
+
+@keyframes floatTag { 0%,100%{transform:translateY(0);opacity:0.4} 50%{transform:translateY(-8px);opacity:0.8} }
+.mol-tag {
+  position: absolute;
+  font-size: 11px;
+  color: var(--text-3);
+  font-family: 'Courier New', monospace;
+  letter-spacing: 0.05em;
+  border: 1px solid var(--border);
+  padding: 4px 10px;
+  border-radius: 4px;
+  background: var(--accent-glow2);
+  animation: floatTag 4s ease-in-out infinite;
+}
+
+/* Stats bar */
+.stats-bar {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0;
+  padding: 20px 40px;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-2);
+  flex-wrap: wrap;
+}
+.stat-item { display: flex; flex-direction: column; align-items: center; padding: 8px 40px; }
+.stat-num { font-size: 24px; font-weight: 800; color: var(--accent); letter-spacing: -0.02em; line-height: 1; }
+.stat-lbl { font-size: 11px; color: var(--text-3); margin-top: 4px; letter-spacing: 0.04em; }
+.stat-divider { width: 1px; height: 40px; background: var(--border); }
+
+/* Feature cards */
+.features {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.feat-card {
+  background: var(--bg);
+  padding: 32px 28px;
+  transition: background 0.2s;
+}
+.feat-card:hover { background: var(--bg-2); }
+.feat-icon { font-size: 24px; color: var(--accent); margin-bottom: 12px; }
+.feat-title { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 8px; letter-spacing: 0.01em; }
+.feat-desc { font-size: 13px; color: var(--text-3); line-height: 1.65; }
+
+/* Landing footer */
+.land-footer {
+  text-align: center;
+  padding: 24px 20px;
+  font-size: 11px;
+  color: var(--text-3);
+  letter-spacing: 0.05em;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  #menu-btn { display: flex !important; }
+
+  #sidebar {
+    position: fixed !important;
+    left: -300px !important;
+    top: 56px !important;
+    height: calc(100vh - 56px) !important;
+    z-index: 100 !important;
+    transition: left 0.25s ease !important;
+    width: 280px !important;
+    box-shadow: none;
+  }
+  #sidebar.open {
+    left: 0 !important;
+    box-shadow: 4px 0 24px rgba(0,0,0,0.6), 0 0 0 1px var(--border) !important;
+  }
+
+  .sb-ov { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 99; backdrop-filter: blur(2px); }
+  .sb-ov.open { display: block; }
+
+  #viewer-wrap { width: 100vw !important; }
+
+  .tt { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .ttb { white-space: nowrap; padding: 10px 12px; font-size: 12px; }
+
+  .ftbar { top: 6px; right: 6px; gap: 3px; }
+  .fb { width: 32px; height: 32px; font-size: 14px; }
+
+  .bot { font-size: 9px; padding: 0 8px; letter-spacing: 0.04em; }
+
+  #navbar { padding: 0 10px; }
+  .nav-title { font-size: 14px; }
+  .nb { width: 32px; height: 32px; font-size: 14px; }
+
+  #land-nav { padding: 0 16px; }
+  .hero { padding: 40px 16px 30px; min-height: 70vh; }
+  .features { grid-template-columns: 1fr; }
+  .stats-bar { gap: 0; }
+  .stat-item { padding: 10px 20px; }
+  .stat-divider { display: none; }
+}
+
+@media (max-width: 480px) {
+  .feat-card { padding: 20px 16px; }
+  .hero-title { font-size: 32px; }
+  .hero-sub { font-size: 14px; }
+  .hero-btn-primary, .hero-btn-secondary { padding: 11px 20px; font-size: 14px; }
+}
+
+@keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
 </style>
 </head>
 <body>
-<div id="loading-screen">
-<div class="atom-anim"><div class="nucleus"></div><div class="orbit"></div><div class="orbit"></div><div class="orbit"></div></div>
-<h2>Molecule Studio</h2><p>Initializing...</p>
+
+<div id="loading">
+  <div class="ld-atom"><div class="core"></div><div class="ld-orb"></div><div class="ld-orb"></div><div class="ld-orb"></div></div>
+  <h2>Molecule Studio</h2>
+  <p>Loading...</p>
 </div>
-<div id="app">
-<div id="navbar">
-<div class="nav-left">
-<svg viewBox="0 0 100 100" width="28" height="28"><circle cx="50" cy="50" r="8" fill="var(--accent)"/><ellipse cx="50" cy="50" rx="40" ry="16" fill="none" stroke="var(--accent)" stroke-width="2" opacity=".6"/><ellipse cx="50" cy="50" rx="40" ry="16" fill="none" stroke="var(--accent)" stroke-width="2" opacity=".6" transform="rotate(60 50 50)"/><ellipse cx="50" cy="50" rx="40" ry="16" fill="none" stroke="var(--accent)" stroke-width="2" opacity=".6" transform="rotate(-60 50 50)"/></svg>
-<span class="nav-title">Molecule Studio</span><span class="nav-badge">v4.0</span>
+
+<div id="landing">
+  <!-- NAVBAR -->
+  <nav id="land-nav">
+    <div class="land-nav-left">
+      <svg viewBox="0 0 100 100" width="26" height="26">
+        <circle cx="50" cy="50" r="8" fill="#00d4ff"/>
+        <ellipse cx="50" cy="50" rx="40" ry="16" fill="none" stroke="#00d4ff" stroke-width="1.5" opacity=".7"/>
+        <ellipse cx="50" cy="50" rx="40" ry="16" fill="none" stroke="#00d4ff" stroke-width="1.5" opacity=".7" transform="rotate(60 50 50)"/>
+        <ellipse cx="50" cy="50" rx="40" ry="16" fill="none" stroke="#00d4ff" stroke-width="1.5" opacity=".7" transform="rotate(-60 50 50)"/>
+      </svg>
+      <span class="land-title">MOLECULE STUDIO</span>
+      <span class="land-version">v5.0</span>
+    </div>
+    <button class="land-launch-btn" id="land-launch-btn">Launch App →</button>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-badge">⬡ 3D Chemistry Visualizer · Free · No Login Required</div>
+    <h1 class="hero-title">Explore Molecular<br><span class="hero-accent">Structures in 3D</span></h1>
+    <p class="hero-sub">Search any molecule by name. Visualize it in real-time 3D. Explore proteins, balance equations, and dive into the periodic table — completely free.</p>
+    <div class="hero-btns">
+      <button class="hero-btn-primary" id="hero-launch">Launch Molecule Studio</button>
+      <button class="hero-btn-secondary" id="hero-search-btn">Search a molecule</button>
+    </div>
+    <div class="hero-search-wrap" id="hero-search-wrap" style="display:none">
+      <input class="hero-search-input" id="hero-search-input" placeholder="Try: caffeine, aspirin, dopamine..." autofocus>
+    </div>
+    <div class="hero-visual">
+      <div class="hero-atom-wrap">
+        <div class="hero-nucleus"></div>
+        <div class="hero-orbit h-orb1"></div>
+        <div class="hero-orbit h-orb2"></div>
+        <div class="hero-orbit h-orb3"></div>
+        <div class="hero-glow"></div>
+      </div>
+      <div class="mol-tag" style="top:15%;left:10%;animation-delay:0s">H₂O</div>
+      <div class="mol-tag" style="top:70%;left:8%;animation-delay:0.5s">C₈H₁₀N₄O₂</div>
+      <div class="mol-tag" style="top:20%;right:8%;animation-delay:1s">C₆H₆</div>
+      <div class="mol-tag" style="top:75%;right:10%;animation-delay:1.5s">DNA</div>
+      <div class="mol-tag" style="top:45%;left:5%;animation-delay:2s">ATP</div>
+      <div class="mol-tag" style="top:50%;right:5%;animation-delay:0.8s">C₂H₅OH</div>
+    </div>
+  </section>
+
+  <!-- STATS BAR -->
+  <div class="stats-bar">
+    <div class="stat-item"><span class="stat-num">100M+</span><span class="stat-lbl">Compounds in PubChem</span></div>
+    <div class="stat-divider"></div>
+    <div class="stat-item"><span class="stat-num">118</span><span class="stat-lbl">Elements in Periodic Table</span></div>
+    <div class="stat-divider"></div>
+    <div class="stat-item"><span class="stat-num">25+</span><span class="stat-lbl">Preset Molecules</span></div>
+    <div class="stat-divider"></div>
+    <div class="stat-item"><span class="stat-num">100%</span><span class="stat-lbl">Free · No API Key</span></div>
+  </div>
+
+  <!-- FEATURE CARDS -->
+  <section class="features">
+    <div class="feat-card">
+      <div class="feat-icon">⬡</div>
+      <div class="feat-title">3D Molecule Viewer</div>
+      <div class="feat-desc">Visualize any compound in interactive 3D — rotate, zoom, and switch between ball-and-stick, sphere, or wireframe.</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">◎</div>
+      <div class="feat-title">Search 100M+ Compounds</div>
+      <div class="feat-desc">Type any molecule name and load it instantly from PubChem — the world's largest free chemistry database.</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">◈</div>
+      <div class="feat-title">Protein Structures</div>
+      <div class="feat-desc">Explore real protein structures from RCSB PDB — hemoglobin, insulin, CRISPR Cas9, and more.</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">⊞</div>
+      <div class="feat-title">Periodic Table</div>
+      <div class="feat-desc">Interactive table of all 118 elements with full details, filterable by category and state of matter.</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">⟺</div>
+      <div class="feat-title">Equation Balancer</div>
+      <div class="feat-desc">Balance any chemical equation instantly with pure JavaScript — works fully offline, no server needed.</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">◑</div>
+      <div class="feat-title">Drug Analysis</div>
+      <div class="feat-desc">Check Lipinski's Rule of Five, molecular weight, H-bond donors and acceptors for any loaded compound.</div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="land-footer">
+    <span>Data: PubChem · RCSB PDB · Wikipedia · NIST · All free, no API keys</span>
+  </footer>
 </div>
-<div class="nav-right">
-<button class="nav-btn" id="menu-btn" title="Menu">☰</button>
-<button class="nav-btn" id="theme-btn" title="Toggle theme">🌙</button>
-<button class="nav-btn" id="fs-btn" title="Fullscreen">⛶</button>
-<button class="nav-btn nav-btn-text" id="pt-btn" title="Periodic Table">⚛ <span>Table</span></button>
+
+<div id="app" style="display:none">
+  <div id="navbar">
+    <div class="nav-l">
+      <svg viewBox="0 0 100 100" width="28" height="28"><circle cx="50" cy="50" r="8" fill="var(--accent)"/><ellipse cx="50" cy="50" rx="40" ry="16" fill="none" stroke="var(--accent)" stroke-width="2.5" opacity=".5"/><ellipse cx="50" cy="50" rx="40" ry="16" fill="none" stroke="var(--accent)" stroke-width="2.5" opacity=".5" transform="rotate(60 50 50)"/><ellipse cx="50" cy="50" rx="40" ry="16" fill="none" stroke="var(--accent)" stroke-width="2.5" opacity=".5" transform="rotate(-60 50 50)"/></svg>
+      <span class="nav-title">Molecule Studio</span>
+    </div>
+    <div class="nav-r">
+      <button class="nb" id="menu-btn" title="Menu">☰</button>
+      <button class="nb" id="theme-btn" title="Theme">🌙</button>
+      <button class="nb" id="fs-btn" title="Fullscreen">⛶</button>
+    </div>
+  </div>
+  <div id="layout">
+    <div class="sb-ov" id="sb-ov"></div>
+    <div id="sidebar">
+      <div class="s-label">Search</div>
+      <div class="s-pad">
+        <div class="s-row"><input class="s-input" id="q" placeholder="Caffeine, aspirin, water..."><button class="s-btn" id="go">Search</button></div>
+        <div class="ac-list" id="ac"></div>
+      </div>
+      <hr class="s-sep">
+      <div class="s-label">Molecule Info</div>
+      <div class="s-pad" id="info"><p style="font-size:12px;color:var(--text-3)">Search a molecule to view details.</p></div>
+      <hr class="s-sep">
+      <div class="s-label">Library</div>
+      <div class="s-pad">
+        <div class="lib-tabs" id="ltabs"></div>
+        <input class="filter-in" id="lfilt" placeholder="Filter...">
+        <div class="lib-list" id="llist"></div>
+      </div>
+      <hr class="s-sep">
+      <div class="s-label">Tools</div>
+      <div class="s-pad">
+        <div class="tt"><button class="ttb on" data-t="eq">Balancer</button><button class="ttb" data-t="ctrl">Viewer</button></div>
+        <div class="tp on" id="tp-eq">
+          <input class="eq-in" id="eq-in" placeholder="H2 + O2 -> H2O">
+          <button class="t-btn" id="eq-go">Balance</button>
+          <div id="eq-res"></div>
+          <div class="eq-chips" id="eq-chips"></div>
+        </div>
+        <div class="tp" id="tp-ctrl" id="ctrl-box"></div>
+      </div>
+      <div class="sb-foot">Data: PubChem · NIST · Wikipedia</div>
+    </div>
+    <div id="viewer-wrap">
+      <div id="viewer"></div>
+      <div class="ftbar">
+        <button class="fb" id="b-ss" title="Screenshot">📷</button>
+        <button class="fb" id="b-rst" title="Reset view">🔄</button>
+        <button class="fb" id="b-fs" title="Fullscreen viewer">⛶</button>
+        <button class="fb" id="b-sh" title="Share link">🔗</button>
+        <button class="fb" id="b-sp" title="Auto-rotate">🔁</button>
+      </div>
+      <div class="a-tt" id="a-tt"></div>
+      <div class="bot" id="bot">Molecule: — | Atoms: — | Bonds: —</div>
+    </div>
+  </div>
 </div>
-</div>
-<div id="main-layout">
-<div class="sidebar-overlay" id="sidebar-overlay"></div>
-<div id="sidebar">
-<!-- Search -->
-<div class="sb-section"><button class="sb-header open" data-sec="search">🔍 Search Molecule<span class="sb-arrow">▶</span></button>
-<div class="sb-body open" id="sec-search">
-<div class="search-wrap"><input class="search-input" id="mol-search" placeholder="Caffeine, aspirin, water..."><button class="search-btn" id="mol-search-btn">Search</button></div>
-<div class="ac-list" id="ac-list"></div>
-</div></div>
-<!-- Info -->
-<div class="sb-section"><button class="sb-header open" data-sec="info">ℹ️ Molecule Info<span class="sb-arrow">▶</span></button>
-<div class="sb-body open" id="sec-info"><div id="mol-info-content"><p style="font-size:12px;color:var(--text-faint)">Search a molecule to see details.</p></div></div></div>
-<!-- Library -->
-<div class="sb-section"><button class="sb-header" data-sec="library">📚 Library<span class="sb-arrow">▶</span></button>
-<div class="sb-body" id="sec-library"><div class="lib-tabs" id="lib-tabs"></div><input class="search-input" id="lib-filter" placeholder="Filter..." style="margin-bottom:6px"><div class="lib-grid" id="lib-grid"></div></div></div>
-<!-- Proteins -->
-<div class="sb-section"><button class="sb-header" data-sec="proteins">🧬 Proteins<span class="sb-arrow">▶</span></button>
-<div class="sb-body" id="sec-proteins"><div class="prot-grid" id="prot-grid"></div></div></div>
-<!-- Tools -->
-<div class="sb-section"><button class="sb-header" data-sec="tools">🔧 Chemistry Tools<span class="sb-arrow">▶</span></button>
-<div class="sb-body" id="sec-tools">
-<div class="tool-tabs"><button class="tool-tab active" data-tool="eq">Balancer</button><button class="tool-tab" data-tool="calc">Calculator</button><button class="tool-tab" data-tool="ctrl">Viewer</button></div>
-<div class="tool-panel active" id="tool-eq">
-<input class="eq-input" id="eq-input" placeholder="H2 + O2 -> H2O">
-<button class="search-btn" style="width:100%" id="eq-btn">Balance</button>
-<div id="eq-result"></div>
-<div class="eq-chips" id="eq-chips"></div>
-</div>
-<div class="tool-panel" id="tool-calc"><div id="calc-content"><p style="font-size:12px;color:var(--text-faint)">Load a molecule first.</p></div></div>
-<div class="tool-panel" id="tool-ctrl"><div id="ctrl-content"></div></div>
-</div></div>
-<div class="sb-footer">Data: PubChem · PDB · Wikipedia · NIST</div>
-</div>
-<!-- Viewer -->
-<div id="viewer-area">
-<div class="viewer-tabs"><button class="viewer-tab active" data-view="3d">3D View</button><button class="viewer-tab" data-view="molview">MolView</button><button class="viewer-tab" data-view="split">Split View</button></div>
-<div class="viewer-panel active" id="vp-3d">
-<div id="mol-viewer"></div>
-<div class="float-toolbar"><button class="float-btn" id="btn-screenshot" title="Screenshot">📷</button><button class="float-btn" id="btn-reset" title="Reset view">🔄</button><button class="float-btn" id="btn-vfull" title="Fullscreen">⛶</button><button class="float-btn" id="btn-share" title="Share link">🔗</button><button class="float-btn" id="btn-spin" title="Auto-rotate">🔁</button></div>
-<div class="atom-tooltip" id="atom-tooltip"></div>
-</div>
-<div class="viewer-panel" id="vp-molview"><div id="molview-wrap"><iframe id="molview-frame" src="about:blank" allow="fullscreen"></iframe></div></div>
-<div class="viewer-panel" id="vp-split"><div class="split-wrap"><div><div id="split-viewer" style="width:100%;height:100%"></div></div><div><iframe id="split-frame" src="about:blank" allow="fullscreen" style="width:100%;height:100%"></iframe></div></div></div>
-<div class="bottom-strip" id="bottom-strip">Molecule: — | Atoms: — | Bonds: —</div>
-</div>
-</div>
-</div>
-<!-- Periodic Table Modal -->
-<div class="modal-overlay" id="pt-modal"><div class="pt-modal">
-<div class="pt-header"><h2>⚛ Periodic Table of Elements</h2><button class="pt-close" id="pt-close">✕</button></div>
-<div class="pt-filters" id="pt-filters"></div>
-<div class="pt-grid" id="pt-grid"></div>
-<div style="font-size:10px;color:var(--text-faint);text-align:center;margin-top:4px">Lanthanides</div>
-<div class="pt-lanthanides" id="pt-lan"></div>
-<div style="font-size:10px;color:var(--text-faint);text-align:center;margin-top:2px">Actinides</div>
-<div class="pt-actinides" id="pt-act"></div>
-</div></div>
-<div class="el-popup" id="el-popup"></div>
-<div id="toast-container"></div>
-<!-- JS will be added in next part -->
+
+<div id="toasts"></div>
+
 <script>
-const PUB='https://pubchem.ncbi.nlm.nih.gov/rest/pug';
-let viewer,splitViewer,currentMol={},currentSDF='',spinning=false;
+(function() {
+  'use strict';
 
-const WIKI_NAMES={"ATP":"Adenosine triphosphate","CO₂":"Carbon dioxide","Vitamin C":"Ascorbic acid","Penicillin G":"Benzylpenicillin","GFP":"Green fluorescent protein","DNA double helix":"DNA"};
-function getWikiName(n){return WIKI_NAMES[n]||n}
+  var PUB = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug';
+  var viewer = null;
+  var currentMol = {};
+  var currentSDF = '';
+  var spinning = false;
+  var searching = false;
 
-const MOLECULES=[
-{n:"Water",f:"H₂O",cid:962,cat:"common",smiles:"O"},{n:"Methane",f:"CH₄",cid:297,cat:"common",smiles:"C"},
-{n:"Benzene",f:"C₆H₆",cid:241,cat:"common",smiles:"c1ccccc1"},{n:"Ethanol",f:"C₂H₆O",cid:702,cat:"common",smiles:"CCO"},
-{n:"Acetone",f:"C₃H₆O",cid:180,cat:"common",smiles:"CC(C)=O"},{n:"CO₂",f:"CO₂",cid:280,cat:"common",smiles:"O=C=O"},
-{n:"Ethylene",f:"C₂H₄",cid:6325,cat:"common",smiles:"C=C"},
-{n:"Caffeine",f:"C₈H₁₀N₄O₂",cid:2519,cat:"drugs",smiles:"Cn1cnc2c1c(=O)n(c(=O)n2C)C"},
-{n:"Aspirin",f:"C₉H₈O₄",cid:2244,cat:"drugs",smiles:"CC(=O)Oc1ccccc1C(=O)O"},
-{n:"Ibuprofen",f:"C₁₃H₁₈O₂",cid:3672,cat:"drugs",smiles:"CC(C)Cc1ccc(cc1)C(C)C(=O)O"},
-{n:"Paracetamol",f:"C₈H₉NO₂",cid:1983,cat:"drugs",smiles:"CC(=O)Nc1ccc(O)cc1"},
-{n:"Penicillin G",f:"C₁₆H₁₈N₂O₄S",cid:5904,cat:"drugs"},{n:"Morphine",f:"C₁₇H₁₉NO₃",cid:5288826,cat:"drugs"},
-{n:"Nicotine",f:"C₁₀H₁₄N₂",cid:89594,cat:"drugs"},
-{n:"Glucose",f:"C₆H₁₂O₆",cid:5793,cat:"nutrients"},{n:"Sucrose",f:"C₁₂H₂₂O₁₁",cid:5988,cat:"nutrients"},
-{n:"Vitamin C",f:"C₆H₈O₆",cid:54670067,cat:"nutrients"},{n:"Cholesterol",f:"C₂₇H₄₆O",cid:5997,cat:"nutrients"},
-{n:"Folic Acid",f:"C₁₉H₁₉N₇O₆",cid:6037,cat:"nutrients"},
-{n:"Dopamine",f:"C₈H₁₁NO₂",cid:681,cat:"biomolecules"},{n:"Serotonin",f:"C₁₀H₁₂N₂O",cid:5202,cat:"biomolecules"},
-{n:"Adenine",f:"C₅H₅N₅",cid:190,cat:"biomolecules"},{n:"ATP",f:"C₁₀H₁₆N₅O₁₃P₃",cid:5957,cat:"biomolecules"},
-{n:"Testosterone",f:"C₁₉H₂₈O₂",cid:6013,cat:"biomolecules"},{n:"Thymine",f:"C₅H₆N₂O₂",cid:1135,cat:"biomolecules"}
-];
-const CAT_COLORS={common:'#6366f1',drugs:'#ef4444',nutrients:'#10b981',biomolecules:'#f59e0b'};
+  var MOLECULES = [
+    {name:'Water',f:'H₂O',cid:962,cat:'common'},{name:'Methane',f:'CH₄',cid:297,cat:'common'},
+    {name:'Benzene',f:'C₆H₆',cid:241,cat:'common'},{name:'Ethanol',f:'C₂H₆O',cid:702,cat:'common'},
+    {name:'Acetone',f:'C₃H₆O',cid:180,cat:'common'},{name:'CO₂',f:'CO₂',cid:280,cat:'common'},
+    {name:'Caffeine',f:'C₈H₁₀N₄O₂',cid:2519,cat:'drugs'},{name:'Aspirin',f:'C₉H₈O₄',cid:2244,cat:'drugs'},
+    {name:'Ibuprofen',f:'C₁₃H₁₈O₂',cid:3672,cat:'drugs'},{name:'Paracetamol',f:'C₈H₉NO₂',cid:1983,cat:'drugs'},
+    {name:'Nicotine',f:'C₁₀H₁₄N₂',cid:89594,cat:'drugs'},{name:'Morphine',f:'C₁₇H₁₉NO₃',cid:5288826,cat:'drugs'},
+    {name:'Penicillin G',f:'C₁₆H₁₈N₂O₄S',cid:5904,cat:'drugs'},
+    {name:'Glucose',f:'C₆H₁₂O₆',cid:5793,cat:'nutrients'},{name:'Sucrose',f:'C₁₂H₂₂O₁₁',cid:5988,cat:'nutrients'},
+    {name:'Vitamin C',f:'C₆H₈O₆',cid:54670067,cat:'nutrients'},{name:'Cholesterol',f:'C₂₇H₄₆O',cid:5997,cat:'nutrients'},
+    {name:'Folic Acid',f:'C₁₉H₁₉N₇O₆',cid:6037,cat:'nutrients'},
+    {name:'Dopamine',f:'C₈H₁₁NO₂',cid:681,cat:'bio'},{name:'Serotonin',f:'C₁₀H₁₂N₂O',cid:5202,cat:'bio'},
+    {name:'Adenine',f:'C₅H₅N₅',cid:190,cat:'bio'},{name:'ATP',f:'C₁₀H₁₆N₅O₁₃P₃',cid:5957,cat:'bio'},
+    {name:'Testosterone',f:'C₁₉H₂₈O₂',cid:6013,cat:'bio'},{name:'Thymine',f:'C₅H₆N₂O₂',cid:1135,cat:'bio'},
+    {name:'Melatonin',f:'C₁₃H₁₆N₂O₂',cid:896,cat:'bio'}
+  ];
+  var CAT_COLORS = {common:'#6366f1',drugs:'#dc3545',nutrients:'#198754',bio:'#f59e0b'};
+  var EQ_EX = ['H2 + O2 -> H2O','CH4 + O2 -> CO2 + H2O','Fe + O2 -> Fe2O3','HCl + NaOH -> NaCl + H2O','N2 + H2 -> NH3'];
 
-const PROTEINS=[
-{n:"Hemoglobin",pdb:"1HHO",desc:"Oxygen-carrying protein in blood"},
-{n:"Insulin",pdb:"4INS",desc:"Blood glucose regulating hormone"},
-{n:"DNA double helix",pdb:"1BNA",desc:"B-form DNA dodecamer"},
-{n:"GFP",pdb:"1EMA",desc:"Green fluorescent protein"},
-{n:"Myoglobin",pdb:"1MBO",desc:"Oxygen storage in muscle"},
-{n:"Lysozyme",pdb:"4LZT",desc:"Antibacterial enzyme in tears"},
-{n:"COVID-19 Spike",pdb:"6VXX",desc:"SARS-CoV-2 spike protein"},
-{n:"HIV Protease",pdb:"3HVP",desc:"Essential HIV replication enzyme"},
-{n:"CRISPR Cas9",pdb:"4ZT0",desc:"Gene editing molecular scissors"},
-{n:"p53 Tumor suppressor",pdb:"2OCJ",desc:"Cancer prevention protein"},
-{n:"Collagen",pdb:"1CAG",desc:"Structural protein in connective tissue"},
-{n:"Actin",pdb:"1ATN",desc:"Cytoskeleton filament protein"}
-];
+  // ═══ Toast ═══
+  function showToast(message, type) {
+    var t = document.createElement('div');
+    t.style.cssText = 'position:fixed;bottom:20px;right:20px;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:500;color:#fff;z-index:9999;animation:fadeIn 0.2s ease;max-width:300px;word-break:break-word;box-shadow:0 4px 12px rgba(0,0,0,0.15);';
+    t.style.background = type === 'success' ? '#198754' : type === 'error' ? '#dc3545' : '#0066cc';
+    t.textContent = message;
+    document.body.appendChild(t);
+    setTimeout(function() { t.style.opacity = '0'; t.style.transition = 'opacity 0.3s'; setTimeout(function() { t.remove(); }, 300); }, 3000);
+  }
 
-const EQ_EXAMPLES=["H2 + O2 -> H2O","CH4 + O2 -> CO2 + H2O","Fe + O2 -> Fe2O3","HCl + NaOH -> NaCl + H2O","C6H12O6 + O2 -> CO2 + H2O","N2 + H2 -> NH3"];
+  // ═══ Loading State ═══
+  function setLoading(on) {
+    searching = on;
+    var btn = document.getElementById('go');
+    if (btn) { btn.disabled = on; btn.textContent = on ? '...' : 'Search'; }
+  }
 
-// Toast
-function showToast(msg,type='info',dur=3000){
-  const t=document.createElement('div');t.className='toast '+type;t.textContent=msg;
-  document.getElementById('toast-container').appendChild(t);
-  setTimeout(()=>{t.style.opacity='0';t.style.transform='translateY(10px)';setTimeout(()=>t.remove(),300)},dur);
-}
-
-// PubChem Autocomplete
-let acTimer=null;
-function setupAutocomplete(){
-  const inp=document.getElementById('mol-search'),list=document.getElementById('ac-list');
-  inp.addEventListener('input',()=>{
-    clearTimeout(acTimer);const q=inp.value.trim();
-    if(q.length<2){list.style.display='none';return;}
-    acTimer=setTimeout(async()=>{
-      try{
-        const r=await fetch(`https://pubchem.ncbi.nlm.nih.gov/rest/autocomplete/compound/${encodeURIComponent(q)}/JSON?limit=8`);
-        const d=await r.json();const items=d.dictionary_terms?.compound||[];
-        if(!items.length){list.style.display='none';return;}
-        list.innerHTML=items.map(i=>`<div class="ac-item">${i}</div>`).join('');
-        list.style.display='block';
-        list.querySelectorAll('.ac-item').forEach(el=>el.addEventListener('click',()=>{
-          inp.value=el.textContent;list.style.display='none';searchMolecule(el.textContent);
-        }));
-      }catch(e){list.style.display='none';}
-    },300);
-  });
-  inp.addEventListener('blur',()=>setTimeout(()=>list.style.display='none',200));
-}
-
-// Main search
-async function searchMolecule(name){
-  console.log('Searching:',name);
-  document.getElementById('mol-search').value=name;
-  document.getElementById('mol-search-btn').disabled=true;
-  document.getElementById('mol-search-btn').textContent='...';
-  try{
-    const cr=await fetch(`${PUB}/compound/name/${encodeURIComponent(name)}/cids/JSON`);
-    if(!cr.ok) throw new Error('Molecule not found. Try a different name.');
-    const cd=await cr.json();const cid=cd.IdentifierList.CID[0];
-    console.log('CID:',cid);
-    let sdf='',is3d=true;
-    try{const sr=await fetch(`${PUB}/compound/cid/${cid}/SDF?record_type=3d`);
-      if(sr.ok)sdf=await sr.text();else throw 0;
-    }catch(e){
-      const sr=await fetch(`${PUB}/compound/cid/${cid}/SDF`);
-      if(sr.ok){sdf=await sr.text();is3d=false;}
+  // ═══ Search ═══
+  async function searchMolecule(name) {
+    if (!name || !name.trim() || searching) return;
+    name = name.trim();
+    setLoading(true);
+    try {
+      var cidRes = await fetch(PUB + '/compound/name/' + encodeURIComponent(name) + '/cids/JSON');
+      if (!cidRes.ok) throw new Error('Molecule "' + name + '" not found. Try another name.');
+      var cidData = await cidRes.json();
+      var cid = cidData.IdentifierList.CID[0];
+      await loadByCID(cid, name);
+    } catch (e) {
+      console.error(e);
+      showToast(e.message || 'Error loading molecule', 'error');
+      setLoading(false);
     }
-    if(!is3d) showToast('Showing 2D structure (3D not available)','warning');
-    
-    const pr=await fetch(`${PUB}/compound/cid/${cid}/property/MolecularFormula,MolecularWeight,IUPACName,XLogP,ExactMass,HBondDonorCount,HBondAcceptorCount,RotatableBondCount,TPSA,CanonicalSMILES/JSON`);
-    const pd=await pr.json();const p=pd.PropertyTable.Properties[0];
-    
-    let cas='';
-    try{const sr=await fetch(`${PUB}/compound/cid/${cid}/synonyms/JSON`);const sd=await sr.json();
-      const syns=sd.InformationList?.Information?.[0]?.Synonym||[];
-      cas=syns.find(s=>/^\d{2,7}-\d{2}-\d$/.test(s))||'';
-    }catch(e){}
-    
-    let wiki=null;
-    try{const wn=getWikiName(name);const wr=await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(wn)}`);
-      if(wr.ok){const wd=await wr.json();if(wd.extract&&wd.extract.length>30)wiki={text:wd.extract,thumb:wd.thumbnail?.source||null};}
-    }catch(e){}
-    
-    currentMol={name,cid,...p,cas,wiki,smiles:p.CanonicalSMILES};currentSDF=sdf;
-    loadSDF(sdf);updateInfo();updateCalc();updateMolView(p.CanonicalSMILES);
-    history.pushState(null,'','?mol='+encodeURIComponent(name));
-    showToast(name+' loaded','success');
-  }catch(e){
-    console.error(e);showToast(e.message||'Error loading molecule','error');
-  }finally{
-    document.getElementById('mol-search-btn').disabled=false;
-    document.getElementById('mol-search-btn').textContent='Search';
   }
-}
 
-async function loadByCID(cid,name,smiles){
-  console.log('Loading CID:',cid,name);
-  document.getElementById('mol-search').value=name;
-  document.getElementById('mol-search-btn').disabled=true;
-  document.getElementById('mol-search-btn').textContent='...';
-  try{
-    let sdf='';
-    try{const sr=await fetch(`${PUB}/compound/cid/${cid}/SDF?record_type=3d`);if(sr.ok)sdf=await sr.text();else throw 0;}
-    catch(e){const sr=await fetch(`${PUB}/compound/cid/${cid}/SDF`);if(sr.ok)sdf=await sr.text();}
-    const pr=await fetch(`${PUB}/compound/cid/${cid}/property/MolecularFormula,MolecularWeight,IUPACName,XLogP,ExactMass,HBondDonorCount,HBondAcceptorCount,RotatableBondCount,TPSA,CanonicalSMILES/JSON`);
-    const pd=await pr.json();const p=pd.PropertyTable.Properties[0];
-    let wiki=null;
-    try{const wn=getWikiName(name);const wr=await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(wn)}`);
-      if(wr.ok){const wd=await wr.json();if(wd.extract&&wd.extract.length>30)wiki={text:wd.extract,thumb:wd.thumbnail?.source||null};}
-    }catch(e){}
-    currentMol={name,cid,...p,wiki,smiles:p.CanonicalSMILES||smiles};currentSDF=sdf;
-    loadSDF(sdf);updateInfo();updateCalc();updateMolView(currentMol.smiles);
-    history.pushState(null,'','?mol='+encodeURIComponent(name));
-    showToast(name+' loaded','success');
-  }catch(e){showToast('Error: '+e.message,'error');}
-  finally{document.getElementById('mol-search-btn').disabled=false;document.getElementById('mol-search-btn').textContent='Search';}
-}
+  async function loadByCID(cid, name) {
+    setLoading(true);
+    try {
+      // Get SDF (3D first, then 2D fallback)
+      var sdf = '';
+      try {
+        var r3 = await fetch(PUB + '/compound/cid/' + cid + '/SDF?record_type=3d');
+        if (r3.ok) sdf = await r3.text();
+      } catch (e) {}
+      if (!sdf) {
+        try {
+          var r2 = await fetch(PUB + '/compound/cid/' + cid + '/SDF');
+          if (r2.ok) sdf = await r2.text();
+          else throw new Error('Structure not available.');
+        } catch (e) { throw new Error('Structure not available for this molecule.'); }
+      }
 
-async function loadProtein(pdb,name){
-  console.log('Loading protein:',pdb);
-  document.getElementById('mol-search-btn').disabled=true;
-  try{
-    const r=await fetch(`https://files.rcsb.org/download/${pdb}.pdb`);
-    if(!r.ok) throw new Error('PDB file not found');
-    const txt=await r.text();
-    viewer.clear();viewer.addModel(txt,'pdb');
-    viewer.setStyle({},{cartoon:{color:'spectrum'}});
-    viewer.zoomTo();viewer.render();
-    if(splitViewer){splitViewer.clear();splitViewer.addModel(txt,'pdb');splitViewer.setStyle({},{cartoon:{color:'spectrum'}});splitViewer.zoomTo();splitViewer.render();}
-    currentMol={name,cid:null,MolecularFormula:'Protein',MolecularWeight:'—'};currentSDF='';
-    document.getElementById('mol-search').value=name;
-    let wiki=null;
-    try{const wn=getWikiName(name);const wr=await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(wn)}`);
-      if(wr.ok){const wd=await wr.json();if(wd.extract)wiki={text:wd.extract,thumb:wd.thumbnail?.source||null};}
-    }catch(e){}
-    currentMol.wiki=wiki;
-    updateInfo(true,pdb);
-    document.getElementById('bottom-strip').textContent=`Protein: ${name} | PDB: ${pdb}`;
-    showToast(name+' loaded','success');
-  }catch(e){showToast('Error: '+e.message,'error');}
-  finally{document.getElementById('mol-search-btn').disabled=false;document.getElementById('mol-search-btn').textContent='Search';}
-}
+      // Load into viewer
+      viewer.clear();
+      viewer.addModel(sdf, 'sdf');
+      viewer.setStyle({}, {stick:{radius:0.12}, sphere:{scale:0.25}});
+      viewer.setHoverable({}, true,
+        function(atom, vwr, ev) {
+          var tt = document.getElementById('a-tt');
+          tt.textContent = atom.elem + ' (#' + atom.serial + ')';
+          tt.style.display = 'block';
+          var e = ev || window.event || {};
+          tt.style.left = (e.clientX || 0) + 12 + 'px';
+          tt.style.top = (e.clientY || 0) - 28 + 'px';
+        },
+        function() { document.getElementById('a-tt').style.display = 'none'; }
+      );
+      viewer.zoomTo();
+      viewer.render();
+      currentSDF = sdf;
 
-function loadSDF(sdf){
-  viewer.clear();viewer.addModel(sdf,'sdf');
-  viewer.setStyle({},{stick:{},sphere:{scale:0.3}});
-  viewer.setHoverable({},true,
-    function(a){const tt=document.getElementById('atom-tooltip');tt.textContent=`${a.elem} (#${a.serial})`;tt.style.display='block';tt.style.left=(event?.clientX||0)+10+'px';tt.style.top=(event?.clientY||0)-30+'px';},
-    function(){document.getElementById('atom-tooltip').style.display='none';}
-  );
-  viewer.zoomTo();viewer.render();
-  if(splitViewer){splitViewer.clear();splitViewer.addModel(sdf,'sdf');splitViewer.setStyle({},{stick:{},sphere:{scale:0.3}});splitViewer.zoomTo();splitViewer.render();}
-  const atoms=viewer.getModel()?.selectedAtoms()||[];
-  const bonds=atoms.reduce((s,a)=>s+(a.bonds?.length||0),0)/2;
-  document.getElementById('bottom-strip').textContent=`Molecule: ${currentMol.name||'—'} | Atoms: ${atoms.length} | Bonds: ${Math.round(bonds)}`;
-}
+      // Count atoms/bonds
+      var atoms = [];
+      try { atoms = viewer.getModel().selectedAtoms({}); } catch(e) {}
+      var bondCount = 0;
+      for (var i = 0; i < atoms.length; i++) { bondCount += (atoms[i].bonds ? atoms[i].bonds.length : 0); }
+      bondCount = Math.round(bondCount / 2);
+      document.getElementById('bot').textContent = 'Molecule: ' + name + ' | Atoms: ' + atoms.length + ' | Bonds: ' + bondCount;
 
-function updateMolView(smiles){
-  if(!smiles)return;
-  const src='https://embed.molview.org/v1/?smiles='+encodeURIComponent(smiles)+'&bg=black';
-  document.getElementById('molview-frame').src=src;
-  document.getElementById('split-frame').src=src;
-}
+      // Get properties
+      try {
+        var propRes = await fetch(PUB + '/compound/cid/' + cid + '/property/MolecularFormula,MolecularWeight,IUPACName,XLogP,ExactMass,HBondDonorCount,HBondAcceptorCount/JSON');
+        if (propRes.ok) {
+          var propData = await propRes.json();
+          var p = propData.PropertyTable.Properties[0];
+          currentMol = {name:name, cid:cid, formula:p.MolecularFormula, mw:p.MolecularWeight, iupac:p.IUPACName, xlogp:p.XLogP, hbd:p.HBondDonorCount, hba:p.HBondAcceptorCount, mass:p.ExactMass};
+          updateInfo();
+        }
+      } catch (e) { console.warn('Properties fetch failed:', e); }
 
-function fmtFormula(f){return f?f.replace(/(\d+)/g,'<sub>$1</sub>'):''}
-
-function updateInfo(isProtein=false,pdb=''){
-  const m=currentMol,el=document.getElementById('mol-info-content');
-  let h='';
-  if(!isProtein&&m.cid) h+=`<img class="mol-img" src="${PUB}/compound/cid/${m.cid}/PNG?record_type=2d&image_size=300x300" onerror="this.style.display='none'" alt="2D">`;
-  h+=`<div class="mol-name">${m.name||'—'}</div>`;
-  h+=`<div class="mol-formula">${fmtFormula(m.MolecularFormula||'')}</div>`;
-  h+=`<table class="prop-table">`;
-  if(m.MolecularWeight) h+=`<tr><td>Mol. Weight</td><td>${m.MolecularWeight} g/mol</td></tr>`;
-  if(m.IUPACName) h+=`<tr><td>IUPAC</td><td title="${m.IUPACName}">${(m.IUPACName||'').slice(0,40)}</td></tr>`;
-  if(m.cas) h+=`<tr><td>CAS</td><td>${m.cas}</td></tr>`;
-  if(m.XLogP!=null) h+=`<tr><td>XLogP</td><td>${m.XLogP}</td></tr>`;
-  if(m.ExactMass) h+=`<tr><td>Exact Mass</td><td>${m.ExactMass}</td></tr>`;
-  if(m.HBondDonorCount!=null) h+=`<tr><td>H-Bond Donors</td><td>${m.HBondDonorCount}</td></tr>`;
-  if(m.HBondAcceptorCount!=null) h+=`<tr><td>H-Bond Acceptors</td><td>${m.HBondAcceptorCount}</td></tr>`;
-  if(m.RotatableBondCount!=null) h+=`<tr><td>Rotatable Bonds</td><td>${m.RotatableBondCount}</td></tr>`;
-  if(m.TPSA!=null) h+=`<tr><td>TPSA</td><td>${m.TPSA} Å²</td></tr>`;
-  if(pdb) h+=`<tr><td>PDB ID</td><td>${pdb}</td></tr>`;
-  h+=`</table>`;
-  if(m.wiki){
-    h+=`<p class="wiki-text">${m.wiki.text.slice(0,300)}${m.wiki.text.length>300?'...':''}</p>`;
-    if(m.wiki.thumb) h+=`<img src="${m.wiki.thumb}" style="width:100%;border-radius:var(--radius);margin-top:4px" onerror="this.style.display='none'">`;
-  }
-  h+=`<div class="ext-links">`;
-  if(m.cid) h+=`<a class="ext-link" href="https://pubchem.ncbi.nlm.nih.gov/compound/${m.cid}" target="_blank">PubChem</a>`;
-  h+=`<a class="ext-link" href="https://webbook.nist.gov/cgi/cbook.cgi?Name=${encodeURIComponent(m.name||'')}&Units=SI" target="_blank">NIST</a>`;
-  h+=`<a class="ext-link" href="https://en.wikipedia.org/wiki/Special:Search/${encodeURIComponent(getWikiName(m.name||''))}" target="_blank">Wikipedia</a>`;
-  h+=`<a class="ext-link" href="https://www.chemspider.com/Search.aspx?q=${encodeURIComponent(m.name||'')}" target="_blank">ChemSpider</a>`;
-  if(m.smiles) h+=`<a class="ext-link" href="https://molview.org/?smiles=${encodeURIComponent(m.smiles)}" target="_blank">MolView</a>`;
-  if(pdb) h+=`<a class="ext-link" href="https://www.rcsb.org/structure/${pdb}" target="_blank">RCSB PDB</a>`;
-  h+=`</div>`;
-  el.innerHTML=h;
-}
-
-// Equation Balancer
-function balanceEquation(str){
-  const sides=str.split(/->|=|→/);
-  if(sides.length!==2)return{error:'Use format: A + B -> C'};
-  const reactants=sides[0].split('+').map(s=>s.trim()).filter(Boolean);
-  const products=sides[1].split('+').map(s=>s.trim()).filter(Boolean);
-  function parseFormula(f){const el={};let i=0;f=f.replace(/\s/g,'');
-    while(i<f.length){if(f[i]>='A'&&f[i]<='Z'){let sym=f[i++];while(i<f.length&&f[i]>='a'&&f[i]<='z')sym+=f[i++];
-    let num='';while(i<f.length&&f[i]>='0'&&f[i]<='9')num+=f[i++];el[sym]=(el[sym]||0)+(parseInt(num)||1);}else i++;}return el;}
-  const allCpd=[...reactants,...products],parsed=allCpd.map(parseFormula);
-  const elements=[...new Set(parsed.flatMap(p=>Object.keys(p)))];
-  const n=allCpd.length;
-  function check(c){return elements.every(el=>{let s=0;allCpd.forEach((_,i)=>s+=(i<reactants.length?1:-1)*(parsed[i][el]||0)*c[i]);return s===0;});}
-  function brute(d,arr,max){if(d===n)return check(arr)?[...arr]:null;for(let v=1;v<=max;v++){const r=brute(d+1,[...arr,v],max);if(r)return r;}return null;}
-  const c=brute(0,[],12);
-  if(!c)return{error:'Could not balance. Check formula spelling.'};
-  const fmt=(cpds,co,off)=>cpds.map((c,i)=>(co[i+off]>1?co[i+off]:'')+c).join(' + ');
-  return{balanced:fmt(reactants,c,0)+' → '+fmt(products,c,reactants.length)};
-}
-
-// Property Calculator
-function updateCalc(){
-  const el=document.getElementById('calc-content');
-  const m=currentMol;
-  if(!m.MolecularWeight){el.innerHTML='<p style="font-size:12px;color:var(--text-faint)">Load a molecule first.</p>';return;}
-  const mw=parseFloat(m.MolecularWeight)||0,hbd=m.HBondDonorCount||0,hba=m.HBondAcceptorCount||0,xlogp=m.XLogP!=null?m.XLogP:0;
-  const lip={mw:mw<=500,hbd:hbd<=5,hba:hba<=10,logp:xlogp<=5};
-  lip.drugLike=[lip.mw,lip.hbd,lip.hba,lip.logp].filter(Boolean).length>=3;
-  let h=`<div style="font-size:12px;font-weight:600;margin-bottom:6px">Lipinski's Rule of Five</div>`;
-  const rw=(name,pass,val)=>`<div class="lip-row"><span>${pass?'✓':'✗'} ${name}</span><span class="${pass?'lip-pass':'lip-fail'}">${val}</span></div>`;
-  h+=rw('MW ≤ 500',lip.mw,mw.toFixed(1)+' g/mol');
-  h+=rw('XLogP ≤ 5',lip.logp,xlogp);
-  h+=rw('HBD ≤ 5',lip.hbd,hbd);
-  h+=rw('HBA ≤ 10',lip.hba,hba);
-  h+=`<div class="lip-verdict" style="background:${lip.drugLike?'rgba(16,185,129,.1);color:var(--success)':'rgba(239,68,68,.1);color:var(--error)'}">${lip.drugLike?'✓ Drug-like':'✗ Not drug-like'}</div>`;
-  if(m.TPSA!=null) h+=`<div style="margin-top:8px;font-size:11px;color:var(--text-muted)">TPSA: ${m.TPSA} Å² · Rotatable: ${m.RotatableBondCount||0}</div>`;
-  el.innerHTML=h;
-}
-
-/* ===== CONTINUED IN NEXT SCRIPT BLOCK ===== */
-</script>
-<script>
-/* Part 2: Periodic Table, UI setup, initialization */
-
-// Periodic Table Data (compact: [num,sym,name,mass,cat,period,group])
-// cat: 0=alkali,1=alkaline,2=transition,3=post-transition,4=metalloid,5=nonmetal,6=halogen,7=noble,8=lanthanide,9=actinide
-const PT_CATS=['alkali-metal','alkaline-earth','transition-metal','post-transition','metalloid','nonmetal','halogen','noble-gas','lanthanide','actinide'];
-const PT_CAT_COLORS=['#fee2e2','#fef3c7','#dbeafe','#e0e7ff','#fef9c3','#dcfce7','#d1fae5','#ede9fe','#fce7f3','#fae8ff'];
-const EL=[
-[1,'H','Hydrogen',1.008,5,1,1],[2,'He','Helium',4.003,7,1,18],
-[3,'Li','Lithium',6.941,0,2,1],[4,'Be','Beryllium',9.012,1,2,2],[5,'B','Boron',10.81,4,2,13],[6,'C','Carbon',12.011,5,2,14],[7,'N','Nitrogen',14.007,5,2,15],[8,'O','Oxygen',15.999,5,2,16],[9,'F','Fluorine',18.998,6,2,17],[10,'Ne','Neon',20.18,7,2,18],
-[11,'Na','Sodium',22.99,0,3,1],[12,'Mg','Magnesium',24.305,1,3,2],[13,'Al','Aluminium',26.982,3,3,13],[14,'Si','Silicon',28.086,4,3,14],[15,'P','Phosphorus',30.974,5,3,15],[16,'S','Sulfur',32.06,5,3,16],[17,'Cl','Chlorine',35.45,6,3,17],[18,'Ar','Argon',39.948,7,3,18],
-[19,'K','Potassium',39.098,0,4,1],[20,'Ca','Calcium',40.078,1,4,2],[21,'Sc','Scandium',44.956,2,4,3],[22,'Ti','Titanium',47.867,2,4,4],[23,'V','Vanadium',50.942,2,4,5],[24,'Cr','Chromium',51.996,2,4,6],[25,'Mn','Manganese',54.938,2,4,7],[26,'Fe','Iron',55.845,2,4,8],[27,'Co','Cobalt',58.933,2,4,9],[28,'Ni','Nickel',58.693,2,4,10],[29,'Cu','Copper',63.546,2,4,11],[30,'Zn','Zinc',65.38,2,4,12],[31,'Ga','Gallium',69.723,3,4,13],[32,'Ge','Germanium',72.63,4,4,14],[33,'As','Arsenic',74.922,4,4,15],[34,'Se','Selenium',78.971,5,4,16],[35,'Br','Bromine',79.904,6,4,17],[36,'Kr','Krypton',83.798,7,4,18],
-[37,'Rb','Rubidium',85.468,0,5,1],[38,'Sr','Strontium',87.62,1,5,2],[39,'Y','Yttrium',88.906,2,5,3],[40,'Zr','Zirconium',91.224,2,5,4],[41,'Nb','Niobium',92.906,2,5,5],[42,'Mo','Molybdenum',95.95,2,5,6],[43,'Tc','Technetium',98,2,5,7],[44,'Ru','Ruthenium',101.07,2,5,8],[45,'Rh','Rhodium',102.906,2,5,9],[46,'Pd','Palladium',106.42,2,5,10],[47,'Ag','Silver',107.868,2,5,11],[48,'Cd','Cadmium',112.414,2,5,12],[49,'In','Indium',114.818,3,5,13],[50,'Sn','Tin',118.71,3,5,14],[51,'Sb','Antimony',121.76,4,5,15],[52,'Te','Tellurium',127.6,4,5,16],[53,'I','Iodine',126.904,6,5,17],[54,'Xe','Xenon',131.293,7,5,18],
-[55,'Cs','Caesium',132.905,0,6,1],[56,'Ba','Barium',137.327,1,6,2],
-[72,'Hf','Hafnium',178.49,2,6,4],[73,'Ta','Tantalum',180.948,2,6,5],[74,'W','Tungsten',183.84,2,6,6],[75,'Re','Rhenium',186.207,2,6,7],[76,'Os','Osmium',190.23,2,6,8],[77,'Ir','Iridium',192.217,2,6,9],[78,'Pt','Platinum',195.084,2,6,10],[79,'Au','Gold',196.967,2,6,11],[80,'Hg','Mercury',200.592,2,6,12],[81,'Tl','Thallium',204.38,3,6,13],[82,'Pb','Lead',207.2,3,6,14],[83,'Bi','Bismuth',208.98,3,6,15],[84,'Po','Polonium',209,4,6,16],[85,'At','Astatine',210,6,6,17],[86,'Rn','Radon',222,7,6,18],
-[87,'Fr','Francium',223,0,7,1],[88,'Ra','Radium',226,1,7,2],
-[104,'Rf','Rutherfordium',267,2,7,4],[105,'Db','Dubnium',268,2,7,5],[106,'Sg','Seaborgium',269,2,7,6],[107,'Bh','Bohrium',270,2,7,7],[108,'Hs','Hassium',277,2,7,8],[109,'Mt','Meitnerium',278,2,7,9],[110,'Ds','Darmstadtium',281,2,7,10],[111,'Rg','Roentgenium',282,2,7,11],[112,'Cn','Copernicium',285,2,7,12],[113,'Nh','Nihonium',286,3,7,13],[114,'Fl','Flerovium',289,3,7,14],[115,'Mc','Moscovium',290,3,7,15],[116,'Lv','Livermorium',293,3,7,16],[117,'Ts','Tennessine',294,6,7,17],[118,'Og','Oganesson',294,7,7,18]
-];
-const LANTHANIDES=[[57,'La','Lanthanum',138.905],[58,'Ce','Cerium',140.116],[59,'Pr','Praseodymium',140.908],[60,'Nd','Neodymium',144.242],[61,'Pm','Promethium',145],[62,'Sm','Samarium',150.36],[63,'Eu','Europium',151.964],[64,'Gd','Gadolinium',157.25],[65,'Tb','Terbium',158.925],[66,'Dy','Dysprosium',162.5],[67,'Ho','Holmium',164.93],[68,'Er','Erbium',167.259],[69,'Tm','Thulium',168.934],[70,'Yb','Ytterbium',173.045],[71,'Lu','Lutetium',174.967]];
-const ACTINIDES=[[89,'Ac','Actinium',227],[90,'Th','Thorium',232.038],[91,'Pa','Protactinium',231.036],[92,'U','Uranium',238.029],[93,'Np','Neptunium',237],[94,'Pu','Plutonium',244],[95,'Am','Americium',243],[96,'Cm','Curium',247],[97,'Bk','Berkelium',247],[98,'Cf','Californium',251],[99,'Es','Einsteinium',252],[100,'Fm','Fermium',257],[101,'Md','Mendelevium',258],[102,'No','Nobelium',259],[103,'Lr','Lawrencium',266]];
-
-let ptFilter='all';
-function buildPeriodicTable(){
-  const grid=document.getElementById('pt-grid');
-  // Build filters
-  document.getElementById('pt-filters').innerHTML=['All','Metals','Nonmetals','Noble gases'].map(f=>
-    `<button class="lib-tab${f==='All'?' active':''}" data-ptf="${f.toLowerCase()}">${f}</button>`
-  ).join('');
-  document.querySelectorAll('[data-ptf]').forEach(b=>b.addEventListener('click',()=>{
-    document.querySelectorAll('[data-ptf]').forEach(x=>x.classList.remove('active'));b.classList.add('active');
-    ptFilter=b.dataset.ptf;applyPTFilter();
-  }));
-  // Render main grid cells
-  grid.innerHTML='';
-  EL.forEach(([num,sym,name,mass,cat,per,grp])=>{
-    const cell=document.createElement('div');cell.className='pt-cell';
-    cell.style.gridColumn=grp;cell.style.gridRow=per;
-    cell.style.background=PT_CAT_COLORS[cat];cell.style.color='#1a1a2e';
-    cell.innerHTML=`<span class="pt-num">${num}</span><span class="pt-sym">${sym}</span><span class="pt-name">${name}</span><span class="pt-mass">${mass}</span>`;
-    cell.dataset.cat=''+cat;cell.title=`${name} (${sym}) - ${mass}`;
-    cell.addEventListener('click',()=>showElementPopup(num,sym,name,mass,cat));
-    grid.appendChild(cell);
-  });
-  // Lanthanides & Actinides
-  const lanGrid=document.getElementById('pt-lan'),actGrid=document.getElementById('pt-act');
-  LANTHANIDES.forEach(([num,sym,name,mass])=>{
-    const cell=document.createElement('div');cell.className='pt-cell';
-    cell.style.background=PT_CAT_COLORS[8];cell.style.color='#1a1a2e';cell.dataset.cat='8';
-    cell.innerHTML=`<span class="pt-num">${num}</span><span class="pt-sym">${sym}</span><span class="pt-name">${name}</span><span class="pt-mass">${mass}</span>`;
-    cell.addEventListener('click',()=>showElementPopup(num,sym,name,mass,8));lanGrid.appendChild(cell);
-  });
-  ACTINIDES.forEach(([num,sym,name,mass])=>{
-    const cell=document.createElement('div');cell.className='pt-cell';
-    cell.style.background=PT_CAT_COLORS[9];cell.style.color='#1a1a2e';cell.dataset.cat='9';
-    cell.innerHTML=`<span class="pt-num">${num}</span><span class="pt-sym">${sym}</span><span class="pt-name">${name}</span><span class="pt-mass">${mass}</span>`;
-    cell.addEventListener('click',()=>showElementPopup(num,sym,name,mass,9));actGrid.appendChild(cell);
-  });
-}
-function applyPTFilter(){
-  const metals=new Set([0,1,2,3,8,9]),nonmetals=new Set([5,6]),noble=new Set([7]);
-  document.querySelectorAll('.pt-cell').forEach(c=>{
-    const cat=parseInt(c.dataset.cat);let show=true;
-    if(ptFilter==='metals') show=metals.has(cat);
-    else if(ptFilter==='nonmetals') show=nonmetals.has(cat)||cat===4;
-    else if(ptFilter==='noble gases') show=noble.has(cat);
-    c.classList.toggle('dimmed',!show);
-  });
-}
-function showElementPopup(num,sym,name,mass,cat){
-  const el=document.getElementById('el-popup');
-  el.innerHTML=`<h3 style="color:${PT_CAT_COLORS[cat]?.replace('f','8')}">${sym}</h3><h4>${name}</h4>
-  <table class="prop-table"><tr><td>Atomic Number</td><td>${num}</td></tr><tr><td>Atomic Mass</td><td>${mass} u</td></tr>
-  <tr><td>Category</td><td>${PT_CATS[cat]?.replace(/-/g,' ')}</td></tr></table>
-  <button class="search-btn" style="width:100%;margin-top:10px" onclick="document.getElementById('el-popup').classList.remove('open');searchMolecule('${name}')">Search compounds</button>
-  <button style="position:absolute;top:8px;right:8px;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:16px" onclick="document.getElementById('el-popup').classList.remove('open')">✕</button>`;
-  el.classList.add('open');
-}
-
-// Viewer Controls
-function buildViewerControls(){
-  const el=document.getElementById('ctrl-content');
-  el.innerHTML=`
-  <div class="ctrl-group"><span class="ctrl-label">Representation</span><div class="ctrl-radios" id="rep-radios">
-    <button class="ctrl-radio active" data-rep="bs">Ball & Stick</button><button class="ctrl-radio" data-rep="stick">Stick</button>
-    <button class="ctrl-radio" data-rep="sphere">Sphere</button><button class="ctrl-radio" data-rep="line">Line</button></div></div>
-  <div class="ctrl-group"><span class="ctrl-label">Background</span><div>
-    <span class="bg-swatch active" data-bg="black" style="background:#000"></span>
-    <span class="bg-swatch" data-bg="white" style="background:#fff"></span>
-    <span class="bg-swatch" data-bg="gray" style="background:#374151"></span></div></div>
-  <div class="ctrl-group"><div class="ctrl-toggle"><span class="toggle-sw" id="tgl-spin"></span><span>Auto-rotate</span></div></div>
-  <div class="ctrl-group"><div class="ctrl-toggle"><span class="toggle-sw" id="tgl-h"></span><span>Show hydrogens</span></div></div>`;
-  // Rep
-  el.querySelectorAll('[data-rep]').forEach(b=>b.addEventListener('click',()=>{
-    el.querySelectorAll('[data-rep]').forEach(x=>x.classList.remove('active'));b.classList.add('active');
-    const r=b.dataset.rep;
-    let style={};
-    if(r==='bs') style={stick:{},sphere:{scale:0.3}};
-    else if(r==='stick') style={stick:{radius:0.15}};
-    else if(r==='sphere') style={sphere:{scale:1}};
-    else style={line:{}};
-    viewer.setStyle({},style);viewer.render();
-    if(splitViewer){splitViewer.setStyle({},style);splitViewer.render();}
-  }));
-  // Background
-  el.querySelectorAll('[data-bg]').forEach(b=>b.addEventListener('click',()=>{
-    el.querySelectorAll('[data-bg]').forEach(x=>x.classList.remove('active'));b.classList.add('active');
-    const c=b.dataset.bg==='black'?'black':b.dataset.bg==='white'?'white':'#374151';
-    viewer.setBackgroundColor(c);if(splitViewer)splitViewer.setBackgroundColor(c);
-  }));
-  // Spin toggle
-  document.getElementById('tgl-spin').addEventListener('click',function(){
-    this.classList.toggle('on');spinning=!spinning;viewer.spin(spinning?'y':false);
-    if(splitViewer)splitViewer.spin(spinning?'y':false);
-  });
-  // Hydrogen toggle
-  let showH=false;
-  document.getElementById('tgl-h').addEventListener('click',function(){
-    this.classList.toggle('on');showH=!showH;
-    // This is a simple toggle approach
-    if(!showH) viewer.setStyle({elem:'H'},{sphere:{scale:0}});
-    else{const active=el.querySelector('[data-rep].active');active?.click();}
-    viewer.render();
-  });
-}
-
-// Build Library
-function buildLibrary(){
-  const tabs=document.getElementById('lib-tabs');
-  tabs.innerHTML=['All','Common','Drugs','Nutrients','Biomolecules'].map(t=>
-    `<button class="lib-tab${t==='All'?' active':''}" data-lcat="${t.toLowerCase()}">${t}</button>`
-  ).join('');
-  function render(cat='all',filter=''){
-    const grid=document.getElementById('lib-grid');
-    grid.innerHTML=MOLECULES.filter(m=>(cat==='all'||m.cat===cat)&&(!filter||m.n.toLowerCase().includes(filter))).map(m=>
-      `<div class="lib-card" data-cid="${m.cid}" data-name="${m.n}" data-smiles="${m.smiles||''}">
-        <span class="cat-dot" style="background:${CAT_COLORS[m.cat]}"></span>
-        <span class="lc-name">${m.n}</span><span class="lc-formula">${m.f}</span></div>`
-    ).join('');
-    grid.querySelectorAll('.lib-card').forEach(c=>c.addEventListener('click',()=>loadByCID(c.dataset.cid,c.dataset.name,c.dataset.smiles)));
-  }
-  render();
-  tabs.querySelectorAll('.lib-tab').forEach(b=>b.addEventListener('click',()=>{
-    tabs.querySelectorAll('.lib-tab').forEach(x=>x.classList.remove('active'));b.classList.add('active');
-    render(b.dataset.lcat,document.getElementById('lib-filter').value.trim().toLowerCase());
-  }));
-  document.getElementById('lib-filter').addEventListener('input',e=>{
-    const active=tabs.querySelector('.lib-tab.active');
-    render(active?.dataset.lcat||'all',e.target.value.trim().toLowerCase());
-  });
-}
-
-// Build Proteins
-function buildProteins(){
-  const grid=document.getElementById('prot-grid');
-  grid.innerHTML=PROTEINS.map(p=>`<div class="prot-card" data-pdb="${p.pdb}" data-name="${p.n}">
-    <img src="https://cdn.rcsb.org/images/structures/${p.pdb.toLowerCase()}/${p.pdb}/${p.pdb}_assembly-1.jpeg" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2250%22 height=%2250%22><rect fill=%22%231f2937%22 width=%2250%22 height=%2250%22/><text x=%2225%22 y=%2230%22 fill=%22%236b7280%22 text-anchor=%22middle%22 font-size=%2212%22>🧬</text></svg>'">
-    <div class="prot-info"><h4>${p.n}</h4><span class="pdb-id">${p.pdb}</span><p>${p.desc}</p></div></div>`).join('');
-  grid.querySelectorAll('.prot-card').forEach(c=>c.addEventListener('click',()=>loadProtein(c.dataset.pdb,c.dataset.name)));
-}
-
-// === INITIALIZATION ===
-document.addEventListener('DOMContentLoaded',function(){
-  console.log('Molecule Studio v4.0 initializing...');
-  
-  // Theme
-  if(localStorage.getItem('ms-theme')==='light') document.body.classList.add('light-mode');
-  document.getElementById('theme-btn').addEventListener('click',()=>{
-    document.body.classList.toggle('light-mode');
-    localStorage.setItem('ms-theme',document.body.classList.contains('light-mode')?'light':'dark');
-    document.getElementById('theme-btn').textContent=document.body.classList.contains('light-mode')?'☀️':'🌙';
-  });
-  
-  // Sidebar collapse
-  document.querySelectorAll('.sb-header').forEach(h=>h.addEventListener('click',()=>{
-    h.classList.toggle('open');const body=h.nextElementSibling;body.classList.toggle('open');
-  }));
-  
-  // Sidebar mobile
-  document.getElementById('menu-btn').addEventListener('click',()=>{
-    document.getElementById('sidebar').classList.toggle('open');
-    document.getElementById('sidebar-overlay').classList.toggle('open');
-  });
-  document.getElementById('sidebar-overlay').addEventListener('click',()=>{
-    document.getElementById('sidebar').classList.remove('open');
-    document.getElementById('sidebar-overlay').classList.remove('open');
-  });
-  
-  // Search
-  setupAutocomplete();
-  document.getElementById('mol-search-btn').addEventListener('click',()=>searchMolecule(document.getElementById('mol-search').value.trim()));
-  document.getElementById('mol-search').addEventListener('keydown',e=>{if(e.key==='Enter')searchMolecule(e.target.value.trim());});
-  
-  // Viewer tabs
-  document.querySelectorAll('.viewer-tab').forEach(t=>t.addEventListener('click',()=>{
-    document.querySelectorAll('.viewer-tab').forEach(x=>x.classList.remove('active'));t.classList.add('active');
-    document.querySelectorAll('.viewer-panel').forEach(p=>p.classList.remove('active'));
-    document.getElementById('vp-'+t.dataset.view).classList.add('active');
-    if(t.dataset.view==='split'&&!splitViewer){
-      splitViewer=$3Dmol.createViewer(document.getElementById('split-viewer'),{backgroundColor:'black',antialias:true});
-      if(currentSDF){splitViewer.addModel(currentSDF,'sdf');splitViewer.setStyle({},{stick:{},sphere:{scale:0.3}});splitViewer.zoomTo();splitViewer.render();}
+      // Update URL and search input
+      document.getElementById('q').value = name;
+      try { history.pushState(null, '', '?mol=' + encodeURIComponent(name)); } catch(e) {}
+      showToast(name + ' loaded', 'success');
+    } catch (e) {
+      console.error(e);
+      showToast(e.message || 'Error loading molecule', 'error');
+    } finally {
+      setLoading(false);
     }
-  }));
-  
-  // Tool tabs
-  document.querySelectorAll('.tool-tab').forEach(t=>t.addEventListener('click',()=>{
-    document.querySelectorAll('.tool-tab').forEach(x=>x.classList.remove('active'));t.classList.add('active');
-    document.querySelectorAll('.tool-panel').forEach(p=>p.classList.remove('active'));
-    document.getElementById('tool-'+t.dataset.tool).classList.add('active');
-  }));
-  
-  // Equation balancer
-  document.getElementById('eq-btn').addEventListener('click',()=>{
-    const r=balanceEquation(document.getElementById('eq-input').value);
-    document.getElementById('eq-result').innerHTML=r.error?`<span style="color:var(--error)">${r.error}</span>`:`<span>${r.balanced}</span>`;
-  });
-  document.getElementById('eq-input').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('eq-btn').click();});
-  document.getElementById('eq-chips').innerHTML=EQ_EXAMPLES.map(e=>`<button class="eq-chip">${e}</button>`).join('');
-  document.querySelectorAll('.eq-chip').forEach(c=>c.addEventListener('click',()=>{document.getElementById('eq-input').value=c.textContent;document.getElementById('eq-btn').click();}));
-  
-  // Floating toolbar
-  document.getElementById('btn-screenshot').addEventListener('click',()=>{
-    const uri=viewer.pngURI();const a=document.createElement('a');a.href=uri;a.download=(currentMol.name||'molecule')+'.png';a.click();showToast('Screenshot saved','success');
-  });
-  document.getElementById('btn-reset').addEventListener('click',()=>{viewer.zoomTo();viewer.render();showToast('View reset','info');});
-  document.getElementById('btn-vfull').addEventListener('click',()=>{const el=document.getElementById('viewer-area');el.requestFullscreen?.();});
-  document.getElementById('btn-share').addEventListener('click',()=>{navigator.clipboard.writeText(window.location.href).then(()=>showToast('Link copied!','success'));});
-  document.getElementById('btn-spin').addEventListener('click',()=>{spinning=!spinning;viewer.spin(spinning?'y':false);if(splitViewer)splitViewer.spin(spinning?'y':false);});
-  
-  // Fullscreen
-  document.getElementById('fs-btn').addEventListener('click',()=>document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen());
-  
-  // Periodic table
-  document.getElementById('pt-btn').addEventListener('click',()=>document.getElementById('pt-modal').classList.add('open'));
-  document.getElementById('pt-close').addEventListener('click',()=>document.getElementById('pt-modal').classList.remove('open'));
-  document.getElementById('pt-modal').addEventListener('click',e=>{if(e.target===document.getElementById('pt-modal'))document.getElementById('pt-modal').classList.remove('open');});
-  
-  // Build UI
-  buildLibrary();buildProteins();buildPeriodicTable();buildViewerControls();
-  
-  // Init 3Dmol viewer
-  viewer=$3Dmol.createViewer(document.getElementById('mol-viewer'),{backgroundColor:'black',antialias:true,preserveDrawingBuffer:true});
-  
-  // Loading screen → App
-  setTimeout(()=>{
-    document.getElementById('loading-screen').style.opacity='0';
-    document.getElementById('loading-screen').style.transition='opacity 0.5s';
-    setTimeout(()=>{
-      document.getElementById('loading-screen').style.display='none';
-      document.getElementById('app').style.display='flex';
+  }
+
+  // ═══ Info Panel ═══
+  function fmtF(f) { return f ? f.replace(/(\d+)/g, '<sub>$1</sub>') : ''; }
+
+  function updateInfo() {
+    var m = currentMol;
+    var el = document.getElementById('info');
+    var h = '';
+    if (m.cid) h += '<img class="mol-img" src="' + PUB + '/compound/cid/' + m.cid + '/PNG?record_type=2d&image_size=300x300" onerror="this.style.display=\'none\'" alt="2D">';
+    h += '<div class="mol-name">' + (m.name || '—') + '</div>';
+    h += '<div class="mol-form">' + fmtF(m.formula || '') + '</div>';
+    h += '<div class="pr-grid">';
+    if (m.mw) h += '<div class="pr-cell"><div class="pr-l">Mol. Weight</div><div class="pr-v">' + m.mw + '</div></div>';
+    if (m.iupac) h += '<div class="pr-cell"><div class="pr-l">IUPAC</div><div class="pr-v" title="' + m.iupac + '">' + (m.iupac.length > 35 ? m.iupac.slice(0,35) + '...' : m.iupac) + '</div></div>';
+    if (m.xlogp != null) h += '<div class="pr-cell"><div class="pr-l">XLogP</div><div class="pr-v">' + m.xlogp + '</div></div>';
+    if (m.mass) h += '<div class="pr-cell"><div class="pr-l">Exact Mass</div><div class="pr-v">' + m.mass + '</div></div>';
+    if (m.hbd != null) h += '<div class="pr-cell"><div class="pr-l">H-Bond Donors</div><div class="pr-v">' + m.hbd + '</div></div>';
+    if (m.hba != null) h += '<div class="pr-cell"><div class="pr-l">H-Bond Acceptors</div><div class="pr-v">' + m.hba + '</div></div>';
+    h += '</div>';
+    h += '<div class="ext-links">';
+    if (m.cid) h += '<a class="ext-link" href="https://pubchem.ncbi.nlm.nih.gov/compound/' + m.cid + '" target="_blank">PubChem</a>';
+    h += '<a class="ext-link" href="https://webbook.nist.gov/cgi/cbook.cgi?Name=' + encodeURIComponent(m.name || '') + '&Units=SI" target="_blank">NIST</a>';
+    h += '<a class="ext-link" href="https://en.wikipedia.org/wiki/' + encodeURIComponent(m.name || '') + '" target="_blank">Wikipedia</a>';
+    h += '</div>';
+    el.innerHTML = h;
+  }
+
+  // ═══ Autocomplete ═══
+  var acTimer = null;
+  function setupAC() {
+    var inp = document.getElementById('q');
+    var list = document.getElementById('ac');
+    inp.addEventListener('input', function() {
+      clearTimeout(acTimer);
+      var v = inp.value.trim();
+      if (v.length < 2) { list.style.display = 'none'; return; }
+      acTimer = setTimeout(async function() {
+        try {
+          var r = await fetch('https://pubchem.ncbi.nlm.nih.gov/rest/autocomplete/compound/' + encodeURIComponent(v) + '/JSON?limit=6');
+          var d = await r.json();
+          var items = (d.dictionary_terms && d.dictionary_terms.compound) || [];
+          if (!items.length) { list.style.display = 'none'; return; }
+          list.innerHTML = items.map(function(i) { return '<div class="ac-item">' + i + '</div>'; }).join('');
+          list.style.display = 'block';
+          var acs = list.querySelectorAll('.ac-item');
+          for (var j = 0; j < acs.length; j++) {
+            acs[j].addEventListener('click', (function(txt) {
+              return function() { inp.value = txt; list.style.display = 'none'; searchMolecule(txt); };
+            })(acs[j].textContent));
+          }
+        } catch (e) { list.style.display = 'none'; }
+      }, 300);
+    });
+    inp.addEventListener('blur', function() { setTimeout(function() { list.style.display = 'none'; }, 200); });
+  }
+
+  // ═══ Library ═══
+  function buildLibrary() {
+    var tabs = document.getElementById('ltabs');
+    var cats = ['All','Common','Drugs','Nutrients','Bio'];
+    tabs.innerHTML = cats.map(function(c) { return '<button class="lt' + (c === 'All' ? ' on' : '') + '" data-c="' + c.toLowerCase() + '">' + c + '</button>'; }).join('');
+    function render(cat, filt) {
+      cat = cat || 'all'; filt = (filt || '').toLowerCase();
+      var list = document.getElementById('llist');
+      var items = MOLECULES.filter(function(m) {
+        return (cat === 'all' || m.cat === cat) && (!filt || m.name.toLowerCase().indexOf(filt) !== -1);
+      });
+      list.innerHTML = items.map(function(m) {
+        return '<div class="lc" data-cid="' + m.cid + '" data-n="' + m.name + '"><span class="lc-dot" style="background:' + CAT_COLORS[m.cat] + '"></span><span class="lc-n">' + m.name + '</span><span class="lc-f">' + m.f + '</span><span class="lc-arr">→</span></div>';
+      }).join('');
+      var cards = list.querySelectorAll('.lc');
+      for (var i = 0; i < cards.length; i++) {
+        cards[i].addEventListener('click', (function(cid, name) {
+          return function() { loadByCID(cid, name); };
+        })(items[i].cid, items[i].name));
+      }
+    }
+    render();
+    var btns = tabs.querySelectorAll('.lt');
+    for (var i = 0; i < btns.length; i++) {
+      btns[i].addEventListener('click', (function(btn) {
+        return function() {
+          var all = tabs.querySelectorAll('.lt');
+          for (var j = 0; j < all.length; j++) all[j].classList.remove('on');
+          btn.classList.add('on');
+          render(btn.dataset.c, document.getElementById('lfilt').value);
+        };
+      })(btns[i]));
+    }
+    document.getElementById('lfilt').addEventListener('input', function() {
+      var active = tabs.querySelector('.lt.on');
+      render(active ? active.dataset.c : 'all', this.value);
+    });
+  }
+
+  // ═══ Equation Balancer ═══
+  function balanceEq(str) {
+    var sides = str.split(/->|=|→/);
+    if (sides.length !== 2) return {err: 'Use format: A + B -> C + D'};
+    var reactants = sides[0].split('+').map(function(s){return s.trim();}).filter(Boolean);
+    var products = sides[1].split('+').map(function(s){return s.trim();}).filter(Boolean);
+    if (!reactants.length || !products.length) return {err: 'Need reactants and products.'};
+    function parse(f) {
+      var el = {}, i = 0; f = f.replace(/\s/g, '');
+      while (i < f.length) {
+        if (f[i] >= 'A' && f[i] <= 'Z') {
+          var sym = f[i++];
+          while (i < f.length && f[i] >= 'a' && f[i] <= 'z') sym += f[i++];
+          var num = '';
+          while (i < f.length && f[i] >= '0' && f[i] <= '9') num += f[i++];
+          el[sym] = (el[sym] || 0) + (parseInt(num) || 1);
+        } else i++;
+      }
+      return el;
+    }
+    var all = reactants.concat(products);
+    var parsed = all.map(parse);
+    var elements = [];
+    parsed.forEach(function(p) { Object.keys(p).forEach(function(e) { if (elements.indexOf(e) === -1) elements.push(e); }); });
+    var n = all.length, nr = reactants.length;
+    function check(c) {
+      return elements.every(function(el) {
+        var s = 0;
+        for (var i = 0; i < n; i++) s += (i < nr ? 1 : -1) * (parsed[i][el] || 0) * c[i];
+        return s === 0;
+      });
+    }
+    function brute(d, arr, max) {
+      if (d === n) return check(arr) ? arr.slice() : null;
+      for (var v = 1; v <= max; v++) { arr[d] = v; var r = brute(d + 1, arr, max); if (r) return r; }
+      return null;
+    }
+    var c = brute(0, [], 12);
+    if (!c) return {err: 'Could not balance. Check formula.'};
+    var left = reactants.map(function(r, i) { return (c[i] > 1 ? c[i] : '') + r; }).join(' + ');
+    var right = products.map(function(p, i) { return (c[i + nr] > 1 ? c[i + nr] : '') + p; }).join(' + ');
+    return {ok: left + ' → ' + right};
+  }
+
+  function setupBalancer() {
+    document.getElementById('eq-go').addEventListener('click', function() {
+      var val = document.getElementById('eq-in').value.trim();
+      if (!val) return;
+      var r = balanceEq(val);
+      var el = document.getElementById('eq-res');
+      if (r.err) el.innerHTML = '<span style="color:var(--error)">' + r.err + '</span>';
+      else el.innerHTML = '<span style="color:var(--success)">' + r.ok + '</span>';
+    });
+    document.getElementById('eq-in').addEventListener('keydown', function(e) { if (e.key === 'Enter') document.getElementById('eq-go').click(); });
+    var chips = document.getElementById('eq-chips');
+    chips.innerHTML = EQ_EX.map(function(e) { return '<button class="eq-c">' + e + '</button>'; }).join('');
+    var chs = chips.querySelectorAll('.eq-c');
+    for (var i = 0; i < chs.length; i++) {
+      chs[i].addEventListener('click', (function(txt) {
+        return function() { document.getElementById('eq-in').value = txt; document.getElementById('eq-go').click(); };
+      })(chs[i].textContent));
+    }
+  }
+
+  // ═══ Viewer Controls ═══
+  function buildControls() {
+    var el = document.getElementById('tp-ctrl');
+    el.innerHTML =
+      '<div class="cg"><span class="cg-l">Representation</span><div class="cr">' +
+      '<button class="crb on" data-r="bs">Ball & Stick</button><button class="crb" data-r="stick">Stick</button>' +
+      '<button class="crb" data-r="sphere">Sphere</button><button class="crb" data-r="line">Line</button></div></div>' +
+      '<div class="cg"><span class="cg-l">Background</span><div>' +
+      '<span class="bg-s on" data-bg="#f8f9fa" style="background:#f8f9fa"></span>' +
+      '<span class="bg-s" data-bg="#333" style="background:#333"></span>' +
+      '<span class="bg-s" data-bg="#000" style="background:#000"></span></div></div>' +
+      '<div class="cg"><div class="tgl-row"><span class="tgl" id="tgl-spin"></span><span>Auto-rotate</span></div></div>';
+
+    var reps = el.querySelectorAll('[data-r]');
+    for (var i = 0; i < reps.length; i++) {
+      reps[i].addEventListener('click', (function(btn) {
+        return function() {
+          var all = el.querySelectorAll('[data-r]');
+          for (var j = 0; j < all.length; j++) all[j].classList.remove('on');
+          btn.classList.add('on');
+          var r = btn.dataset.r, s = {};
+          if (r === 'bs') s = {stick:{radius:0.12}, sphere:{scale:0.25}};
+          else if (r === 'stick') s = {stick:{radius:0.15}};
+          else if (r === 'sphere') s = {sphere:{scale:1}};
+          else s = {line:{}};
+          viewer.setStyle({}, s); viewer.render();
+        };
+      })(reps[i]));
+    }
+    var bgs = el.querySelectorAll('[data-bg]');
+    for (var i = 0; i < bgs.length; i++) {
+      bgs[i].addEventListener('click', (function(btn) {
+        return function() {
+          var all = el.querySelectorAll('[data-bg]');
+          for (var j = 0; j < all.length; j++) all[j].classList.remove('on');
+          btn.classList.add('on');
+          viewer.setBackgroundColor(btn.dataset.bg);
+        };
+      })(bgs[i]));
+    }
+    document.getElementById('tgl-spin').addEventListener('click', function() {
+      this.classList.toggle('on');
+      spinning = !spinning;
+      viewer.spin(spinning ? 'y' : false);
+    });
+  }
+
+  // ═══ Tool Tabs ═══
+  function setupToolTabs() {
+    var btns = document.querySelectorAll('.ttb');
+    for (var i = 0; i < btns.length; i++) {
+      btns[i].addEventListener('click', (function(btn) {
+        return function() {
+          var all = document.querySelectorAll('.ttb');
+          for (var j = 0; j < all.length; j++) all[j].classList.remove('on');
+          btn.classList.add('on');
+          var panels = document.querySelectorAll('.tp');
+          for (var j = 0; j < panels.length; j++) panels[j].classList.remove('on');
+          document.getElementById('tp-' + btn.dataset.t).classList.add('on');
+        };
+      })(btns[i]));
+    }
+  }
+
+  // ═══ Toolbar ═══
+  function setupToolbar() {
+    document.getElementById('b-ss').addEventListener('click', function() {
+      try {
+        var uri = viewer.pngURI();
+        var a = document.createElement('a');
+        a.href = uri; a.download = (currentMol.name || 'molecule') + '.png'; a.click();
+        showToast('Screenshot saved!', 'success');
+      } catch (e) { showToast('Screenshot failed', 'error'); }
+    });
+    document.getElementById('b-rst').addEventListener('click', function() {
+      viewer.zoomTo(); viewer.render(); showToast('View reset', 'info');
+    });
+    document.getElementById('b-fs').addEventListener('click', function() {
+      try { document.getElementById('viewer-wrap').requestFullscreen(); } catch(e) {}
+    });
+    document.getElementById('b-sh').addEventListener('click', function() {
+      try {
+        navigator.clipboard.writeText(window.location.href).then(function() { showToast('Link copied!', 'success'); });
+      } catch (e) { showToast('Could not copy link', 'error'); }
+    });
+    document.getElementById('b-sp').addEventListener('click', function() {
+      spinning = !spinning; viewer.spin(spinning ? 'y' : false);
+    });
+  }
+
+  // ═══ INIT ═══
+  window.addEventListener('load', function() {
+    console.log('Molecule Studio initializing...');
+
+    // Check dependencies
+    if (typeof $3Dmol === 'undefined') {
+      document.getElementById('loading').innerHTML = '<h2 style="color:#dc3545">3D viewer failed to load.</h2><p>Please refresh the page or check your internet connection.</p>';
+      return;
+    }
+
+    // Create viewer
+    try {
+      viewer = $3Dmol.createViewer('viewer', {
+        backgroundColor: '#f8f9fa',
+        antialias: true,
+        preserveDrawingBuffer: true
+      });
+    } catch (e) {
+      document.getElementById('loading').innerHTML = '<h2 style="color:#dc3545">Viewer initialization failed.</h2><p>' + e.message + '</p>';
+      return;
+    }
+
+    // Show loading off
+    document.getElementById('loading').style.display = 'none';
+
+    // Wait for layout
+    setTimeout(function() {
       viewer.resize();
-      // Deep linking or default
-      const urlMol=new URLSearchParams(window.location.search).get('mol');
-      if(urlMol) searchMolecule(urlMol);
-      else loadByCID(2519,'Caffeine','Cn1cnc2c1c(=O)n(c(=O)n2C)C');
-      console.log('Molecule Studio v4.0 ready!');
-    },500);
-  },1500);
-});
+
+      // Build UI
+      setupAC();
+      buildLibrary();
+      setupBalancer();
+      buildControls();
+      setupToolTabs();
+      setupToolbar();
+
+      // Search events
+      document.getElementById('go').addEventListener('click', function() {
+        searchMolecule(document.getElementById('q').value);
+      });
+      document.getElementById('q').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') searchMolecule(this.value);
+      });
+
+      // Theme
+      if (localStorage.getItem('ms-theme') === 'dark') document.body.classList.add('dark');
+      document.getElementById('theme-btn').addEventListener('click', function() {
+        document.body.classList.toggle('dark');
+        var isDark = document.body.classList.contains('dark');
+        localStorage.setItem('ms-theme', isDark ? 'dark' : 'light');
+        this.textContent = isDark ? '☀️' : '🌙';
+      });
+
+      // Fullscreen
+      document.getElementById('fs-btn').addEventListener('click', function() {
+        try {
+          if (document.fullscreenElement) document.exitFullscreen();
+          else document.documentElement.requestFullscreen();
+        } catch(e) {}
+      });
+
+      // Mobile sidebar
+      document.getElementById('menu-btn').addEventListener('click', function() {
+        document.getElementById('sidebar').classList.toggle('open');
+        document.getElementById('sb-ov').classList.toggle('open');
+      });
+      document.getElementById('sb-ov').addEventListener('click', function() {
+        document.getElementById('sidebar').classList.remove('open');
+        this.classList.remove('open');
+      });
+
+      // Window resize
+      window.addEventListener('resize', function() {
+        if (viewer) viewer.resize();
+      });
+
+      // Landing page logic
+      var hasLaunched = false;
+      function showApp(bypassMol) {
+        if (hasLaunched) return;
+        hasLaunched = true;
+        
+        document.getElementById('app').style.display = 'flex';
+        setTimeout(function() { if (viewer) viewer.resize(); }, 10);
+        
+        document.getElementById('landing').classList.add('hide');
+        setTimeout(function() {
+          document.getElementById('landing').style.display = 'none';
+        }, 400);
+
+        if (!bypassMol) {
+          loadByCID(2519, 'Caffeine');
+        }
+      }
+
+      document.getElementById('land-launch-btn').addEventListener('click', function() { showApp(false); });
+      document.getElementById('hero-launch').addEventListener('click', function() { showApp(false); });
+
+      document.getElementById('hero-search-btn').addEventListener('click', function() {
+        document.getElementById('hero-search-wrap').style.display = 'block';
+        document.getElementById('hero-search-input').focus();
+      });
+
+      document.getElementById('hero-search-input').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && this.value.trim()) {
+          showApp(true);
+          setTimeout(function() {
+            var val = document.getElementById('hero-search-input').value.trim();
+            document.getElementById('q').value = val;
+            searchMolecule(val);
+          }, 450);
+        }
+      });
+
+      // Deep link or default
+      var mol = new URLSearchParams(window.location.search).get('mol');
+      if (mol) {
+        document.getElementById('landing').style.display = 'none';
+        showApp(true);
+        searchMolecule(mol);
+      }
+
+      console.log('Molecule Studio ready!');
+    }, 100);
+  });
+})();
 </script>
 </body>
 </html>
